@@ -2,307 +2,222 @@
 
 FastAPI-based AI service providing intelligent features for port gate management.
 
-## Features
+**Version**: 1.0.0  
+**Status**: Production Ready ✅
 
-### Multi-Agent Chatbot
-- Natural language interface for logistics queries
-- Conversation history persistence
+---
+
+## 🚀 Features
+
+### 🤖 Multi-Agent Chatbot
+- Natural language interface for logistics queries (French/English/Darija)
+- Conversation history persistence (SQLite + NestJS backend)
 - Role-based access control (ADMIN, OPERATOR, CARRIER/DRIVER)
 - Structured responses with blockchain proof
+- **Voice-to-Chat** integration with STT (Algerian Darija support)
 
-### ML-Powered Predictions
+### 🎯 ML-Powered Predictions
 - **Traffic Peak Forecasting**: Predict traffic volumes and peak times
 - **Anomaly Detection**: Identify delays and no-shows before they happen
+- **Monthly Throughput Forecasting**: 1-month ahead predictions with saturation risk scoring
 
-### Smart Algorithms
+### 🧠 Smart Algorithms
 - **Slot Recommendation**: Optimal time slot suggestions based on multiple criteria
-- **Carrier Scoring**: Reliability scoring with explainable components
+- **Carrier Scoring**: Reliability scoring (0-100, Tiers A-D) with explainable components
+- **Operator Behavior Analysis**: Pattern detection and performance insights
 
-### Advanced Analytics
+### 📊 Advanced Analytics
 - **Port Stress Index**: Composite indicator of port operational stress
 - **Proactive Alerts**: Operational warnings based on predictions
 - **What-If Simulation**: Rule-based scenario analysis
+- **Operator Analytics**: BA-grade insights with management scoring (0-100)
+- **Capacity Utilization Analysis**: Slot capacity vs throughput analysis
 
-### Blockchain Integration
+### 🔗 Blockchain Integration
 - Read-only blockchain queries for audit trails
 - Booking validation events
 - Gate entry/exit verification
 - Refusal and no-show evidence
 
-### LangChain LLM Orchestration (New!)
-- **Intelligent Intent Classification**: Google Gemini-powered intent detection with confidence scoring
+### 🎙️ Speech-to-Text (STT)
+- **Algerian Darija Support** (ar-dz language hint)
+- Local Whisper model integration
+- Multi-language support (Arabic, French, English)
+- Audio file upload and URL transcription
+- Darija normalization
+
+### 🧩 LangChain LLM Orchestration
+- **Intelligent Intent Classification**: Google Gemini-powered intent detection
 - **Tool Calling**: LLM orchestrates existing agents via structured tool calls
-- **Message Polishing**: Natural language responses tailored to user language (French/English/Darija)
+- **Message Polishing**: Natural language responses tailored to user language
 - **Automatic Fallback**: Gracefully falls back to deterministic orchestrator if LLM unavailable
 - **Debug Mode**: Force deterministic mode with `?llm=false` query parameter
 
-## Architecture
+---
 
-### Vue d'Ensemble
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                  CLIENT (Dashboard Frontend)                         │
-└────────────────────┬────────────────────────────────┬────────────────┘
-                     │                                │
-                     ▼                                ▼
-        ┌─────────────────────┐          ┌────────────────────────┐
-        │   Mode Chatbot      │          │   Mode API Direct      │
-        │  POST /api/ai/chat  │          │  GET /carriers/score   │
-        │                     │          │  POST /slots/recommend │
-        └──────────┬──────────┘          └──────────┬─────────────┘
-                   │                                │
-                   └────────────────┬───────────────┘
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                   AI SERVICE (FastAPI :8000)                        │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────┐   │
-│  │                    API Layer                                │   │
-│  │  /ai/chat │ /carriers │ /slots │ /traffic │ /anomalies     │   │
-│  └──────────────────┬─────────────────────────────────────────┘   │
-│                     │                                              │
-│  ┌──────────────────▼────────────┐                                │
-│  │  ORCHESTRATOR (Chat only)     │  ┌──────────────────────┐     │
-│  │  • Intent Detector            │  │   Model Loader       │     │
-│  │  • Entity Extractor           │◄─┤  • carrier_scoring   │     │
-│  │  • Policy (RBAC)              │  │  • slot_recommend    │     │
-│  │  • Agent Router               │  │  • traffic_forecast  │     │
-│  └───────────┬───────────────────┘  └──────────────────────┘     │
-│              │                                                    │
-│  ┌───────────▼────────────────────────────────────────────────┐  │
-│  │                 AGENTS (Spécialisés)                        │  │
-│  │  • BookingAgent     • CarrierScoreAgent  • SlotAgent       │  │
-│  │  • TrafficAgent     • AnomalyAgent       • AnalyticsAgent  │  │
-│  └───────────┬────────────────────────────────────────────────┘  │
-│              │                                                    │
-│  ┌───────────▼────────────────────────────────────────────────┐  │
-│  │              ALGORITHMS (Déterministes)                     │  │
-│  │  • carrier_scoring.py    • slot_recommender.py             │  │
-│  └───────────┬────────────────────────────────────────────────┘  │
-│              │                                                    │
-│  ┌───────────▼────────────────────────────────────────────────┐  │
-│  │                TOOLS (HTTP Clients)                         │  │
-│  │  • nest_client.py       • booking_service_client.py        │  │
-│  │  • carrier_service_client.py  • slot_service_client.py     │  │
-│  └───────────┬────────────────────────────────────────────────┘  │
-│              │                                                    │
-└──────────────┼────────────────────────────────────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                  BACKEND SERVICES (External)                     │
-│  • NestJS Backend (:3001)    - Auth, Booking CRUD                │
-│  • Booking Service (:3002)   - Booking status, history           │
-│  • Slot Service (:3003)      - Availability, capacity            │
-│  • Carrier Service (:3004)   - Stats, profile                    │
-│  • Analytics Service (:3005) - Metrics, aggregations             │
-│  • Blockchain Service (:3010) - Audit trail (read-only)          │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Structure du Projet
+## 📁 Project Structure
 
 ```
 ai_service/
-├── ARCHITECTURE.md                      # Documentation architecture complète
-├── README.md                            # Ce fichier
-├── requirements.txt                    # Dépendances Python
-├── .env.example                        # Template config
-├── .gitignore                          # Exclusions Git
-├── check_setup.py                      # Script de diagnostic
-├── test_live.py                        # Test serveur live
+├── README.md                           # This file
+├── ARCHITECTURE.md                     # Complete architecture documentation
+├── requirements.txt                    # Python dependencies
+├── .env.example                        # Environment variables template
+├── pytest.ini                          # Pytest configuration
 │
-└── app/                                # Code source principal
-    ├── __init__.py
-    ├── main.py                         # Entry point FastAPI
+└── app/                                # Main source code
+    ├── main.py                         # FastAPI entry point
     │
-    ├── api/                            # Endpoints REST
-    │   ├── __init__.py
-    │   ├── router.py                   # Agrégateur central routes
-    │   ├── chat.py                     # POST /ai/chat (chatbot)
-    │   ├── carriers.py                 # GET /carriers/{id}/score
-    │   ├── slots.py                    # GET/POST /slots/*
-    │   ├── traffic.py                  # GET /traffic/forecast
-    │   ├── anomalies.py                # GET /anomalies/recent
-    │   ├── analytics.py                # POST /analytics/*
-    │   ├── admin.py                    # GET /admin/* (ADMIN only)
-    │   └── operator.py                 # GET /operator/* (OPERATOR only)
+    ├── api/                            # REST API endpoints
+    │   ├── chat.py                     # POST /api/chat (chatbot)
+    │   ├── chat_voice.py               # POST /api/chat/voice (voice-to-chat)
+    │   ├── slots.py                    # Slot availability & recommendations
+    │   ├── operator.py                 # Operator analytics endpoints
+    │   ├── analytics.py                # Stress index, alerts, what-if
+    │   ├── stt.py                      # Speech-to-text endpoints
+    │   ├── admin.py                    # Admin endpoints (health, system info)
+    │   └── router.py                   # Central router aggregator
     │
-    ├── orchestrator/                   # Coordination multi-agent  
-    │   ├── __init__.py
-    │   ├── orchestrator.py             # execute() - Point d'entrée
-    │   ├── intent_detector.py          # Détection intention (regex+keywords)
-    │   ├── entity_extractor.py         # Extraction entités (booking_id, dates, etc.)
-    │   ├── policy.py                   # RBAC - Vérification permissions
-    │   └── response_formatter.py       # Formatage réponse finale
+    ├── orchestrator/                   # Multi-agent coordination
+    │   ├── orchestrator.py             # Main orchestrator (execute)
+    │   ├── intent_detector.py          # Intent detection (regex + LLM)
+    │   ├── entity_extractor.py         # Entity extraction
+    │   └── policy.py                   # RBAC enforcement
     │
-    ├── agents/                         # Agents spécialisés
-    │   ├── __init__.py
-    │   ├── base_agent.py               # BaseAgent (classe abstraite)
-    │   ├── registry.py                 # Mapping intent → agent
-    │   ├── booking_agent.py            # Statut réservation
-    │   ├── carrier_score_agent.py      # Score transporteur (fiabilité)
-    │   ├── slot_agent.py               # Disponibilité + Recommandation
-    │   ├── traffic_agent.py            # Prévisions trafic
-    │   ├── anomaly_agent.py            # Détection anomalies
-    │   ├── analytics_agent.py          # Analytics (stress index, alerts)
-    │   ├── blockchain_audit_agent.py   # Audit blockchain (read-only)
-    │   └── recommendation_agent.py     # Recommandations générales
+    ├── agents/                         # Specialized agents
+    │   ├── base_agent.py               # BaseAgent (abstract class)
+    │   ├── registry.py                 # Agent registry (singleton pattern)
+    │   ├── booking_agent.py            # Booking status queries
+    │   ├── booking_create_agent.py     # Booking creation
+    │   ├── slot_agent.py               # Slot availability & recommendations
+    │   ├── operator_analytics_agent.py # Operator performance analytics
+    │   ├── analytics_agent.py          # Stress index, alerts, what-if
+    │   └── blockchain_audit_agent.py   # Blockchain audit queries
     │
-    ├── algorithms/                     # Algorithmes déterministes
-    │   ├── __init__.py
-    │   ├── carrier_scoring.py          # score_carrier() → score 0-100, tier A-D
-    │   └── slot_recommender.py         # recommend_slots() → ranking + strategy
+    ├── algorithms/                     # Deterministic algorithms
+    │   ├── carrier_scoring.py          # Carrier reliability scoring
+    │   └── slot_recommender.py         # Slot ranking algorithm
     │
-    ├── models/                         # ML Models (loader + fichiers)
-    │   ├── __init__.py
-    │   ├── loader.py                   # get_model(), list_models()
-    │   ├── traffic_model.joblib        # Modèle prévision trafic (scikit-learn)
-    │   └── anomaly_model.joblib        # Modèle détection anomalies
+    ├── analytics/                      # Advanced analytics modules
+    │   ├── operator_behavior_analysis.py    # Operator pattern detection
+    │   ├── slot_capacity_analysis.py        # Capacity utilization analysis
+    │   ├── monthly_forecast_engine.py       # Monthly throughput forecasting
+    │   ├── stress_index.py                  # Port stress index computation
+    │   ├── proactive_alerts.py              # Alert generation
+    │   └── what_if_simulation.py            # Scenario simulation
     │
-    ├── tools/                          # Clients HTTP & utilitaires
-    │   ├── __init__.py
-    │   ├── nest_client.py              # NestJS Backend (:3001)
-    │   ├── booking_service_client.py   # Booking Service (:3002)
-    │   ├── slot_service_client.py      # Slot Service (:3003)
-    │   ├── carrier_service_client.py   # Carrier Service (:3004)
-    │   ├── analytics_data_client.py    # Analytics Service (:3005)
-    │   ├── blockchain_service_client.py# Blockchain (:3010)
-    │   ├── time_tool.py                # Utilitaires temps (parsing, formatting)
-    │   └── blockchain_tool.py          # Helpers blockchain (proof retrieval)
+    ├── agno_runtime/                   # AGNO LLM integration
+    │   ├── intent_classifier.py        # LLM-powered intent classification
+    │   ├── message_polisher.py         # Response polishing
+    │   ├── operator_analytics_polish.py# Analytics narrative generation
+    │   └── llm_provider.py             # Google Gemini integration
     │
-    ├── analytics/                      # Analytics avancés
-    │   ├── __init__.py
-    │   ├── stress_index.py             # Calcul stress index portuaire
-    │   ├── proactive_alerts.py         # Génération alertes proactives
-    │   └── what_if_simulation.py       # Simulation scénarios what-if
+    ├── tools/                          # HTTP clients & utilities
+    │   ├── nest_client.py              # NestJS backend client
+    │   ├── booking_service_client.py   # Booking service client
+    │   ├── booking_write_client.py     # Booking write operations
+    │   ├── slot_service_client.py      # Slot service client
+    │   ├── carrier_service_client.py   # Carrier service client
+    │   ├── analytics_data_client.py    # Analytics service client
+    │   ├── blockchain_service_client.py# Blockchain client
+    │   ├── stt_service_client.py       # STT service client
+    │   ├── time_tool.py                # Time utilities
+    │   └── blockchain_tool.py          # Blockchain utilities
     │
-    ├── schemas/                        # Pydantic models (validation)
-    │   ├── __init__.py
-    │   ├── chat.py                     # ChatMessage, ChatRequest, ChatResponse
-    │   ├── booking.py                  # BookingStatus, BookingDetails
-    │   ├── carrier.py                  # CarrierScore, CarrierStats
-    │   ├── slot.py                     # SlotAvailability, SlotRecommendation
-    │   ├── traffic.py                  # TrafficForecast, TrafficPrediction
-    │   ├── anomaly.py                  # AnomalyDetection, AnomalyAlert
-    │   ├── analytics.py                # AnalyticsRequest, AnalyticsResponse
-    │   ├── stress.py                   # StressIndexResponse, StressComponents
-    │   └── common.py                   # BaseResponse, Proof, Error
+    ├── schemas/                        # Pydantic models
+    │   ├── chat.py                     # Chat request/response schemas
+    │   ├── stt.py                      # STT schemas
+    │   ├── operator_analytics.py       # Operator analytics schemas
+    │   ├── stress.py                   # Stress index schemas
+    │   └── base.py                     # Base response schemas
     │
-    ├── core/                           # Configuration & utilitaires centraux
-    │   ├── __init__.py
-    │   ├── config.py                   # Settings (env vars, URLs, timeouts)
-    │   ├── logging.py                  # setup_logging(), TraceIdFilter
-    │   ├── errors.py                   # AppError, ValidationError, etc.
-    │   └── security.py                 # require_auth(), require_role()
+    ├── core/                           # Core utilities
+    │   ├── config.py                   # Settings (environment variables)
+    │   ├── logging.py                  # Logging setup with trace_id
+    │   ├── errors.py                   # Custom exceptions
+    │   └── security.py                 # Authentication & RBAC
     │
     ├── constants/                      # Constants
-    │   ├── __init__.py
-    │   ├── constants.py                # Constants générales
-    │   ├── roles.py                    # ADMIN, OPERATOR, CARRIER
-    │   ├── intents.py                  # BOOKING_STATUS, CARRIER_SCORE, etc.
-    │   └── thresholds.py               # Seuils ML, stress levels
+    │   ├── roles.py                    # User roles (ADMIN, OPERATOR, CARRIER)
+    │   ├── intents.py                  # Intent constants
+    │   ├── stt_constants.py            # STT configuration
+    │   └── thresholds.py               # Algorithm thresholds
     │
-    └── tests/                          # Tests
-        ├── __init__.py
-        ├── conftest.py                 # Fixtures pytest (path setup)
-        ├── test_algorithms.py          # Tests carrier_scoring, slot_recommender
-        ├── test_agents.py              # Tests agents (booking, carrier, slot)
-        └── test_api.py                 # Tests endpoints FastAPI
+    └── tests/                          # Test suite
+        ├── test_operator_analytics.py  # Operator analytics tests
+        ├── test_agent_complete.py      # Agent functionality tests
+        ├── test_integration.py         # Integration tests
+        └── test_openapi.py             # OpenAPI schema validation
 ```
 
-### Flux de Traitement
+---
 
-#### Mode 1 : Chatbot Conversationnel
+## 🔌 API Endpoints
 
-```
-1. Dashboard → POST /api/ai/chat
-   { "message": "Quel est le score du transporteur 123?", "user_role": "OPERATOR" }
+See [AI_SERVICE_API_SPEC.md](../Endpoint%20doc/AI_SERVICE_API_SPEC.md) for complete API documentation.
 
-2. Orchestrator
-   ├─ Intent Detector → "carrier_score"
-   ├─ Entity Extractor → { carrier_id: "123" }
-   ├─ Policy Enforcer → ✓ OPERATOR autorisé
-   └─ Agent Router → CarrierScoreAgent
+### Core Endpoints
+- `GET /` - Root health check
+- `GET /health` - Detailed health check
 
-3. CarrierScoreAgent
-   ├─ HTTP GET /carriers/123/stats
-   ├─ carrier_scoring.score_carrier(stats)
-   └─ Return { score: 85.5, tier: "A", ... }
+### Chat & Voice
+- `POST /api/chat` - Send message to AI assistant
+- `GET /api/chat/history/{conversation_id}` - Get conversation history
+- `DELETE /api/chat/history/{conversation_id}` - Delete conversation
+- `POST /api/chat/voice` - Voice-to-chat (STT + Orchestrator)
 
-4. Response Formatter → Format with explanation
+### Slot Intelligence
+- `GET /api/slots/availability` - Get available slots (public + authenticated)
+- `POST /api/slots/recommend` - Get AI-powered slot recommendations (authenticated)
 
-5. Dashboard ← { message: "...", data: {...}, proofs: {...} }
-```
+### Operator Analytics (NEW!)
+- `GET /api/operator/bookings/{ref}/status` - Get booking status
+- `POST /api/operator/bookings/status/batch` - Batch booking status
+- `GET /api/operator/slots/availability` - Slot availability (operator view)
+- `GET /api/operator/ai-overview` - **AI operator analytics with BA scoring**
+- `GET /api/operator/month-forecast` - **Monthly throughput forecast**
 
-#### Mode 2 : API REST Direct
+### Analytics
+- `GET /api/analytics/stress-index` - Compute port stress index
+- `GET /api/analytics/alerts` - Generate proactive alerts
+- `POST /api/analytics/what-if` - Run what-if scenario simulation
+- `GET /api/analytics/health` - Analytics service health
 
-```
-1. Dashboard → GET /api/carriers/123/score
-   Headers: { Authorization, x-user-role: OPERATOR }
+### Speech-to-Text (STT) (NEW!)
+- `POST /api/stt/transcribe` - Transcribe uploaded audio file
+- `POST /api/stt/transcribe-url` - Transcribe audio from URL
+- `GET /api/stt/health` - STT service health
 
-2. Endpoint carriers.py
-   ├─ check_carrier_access() → ✓
-   ├─ Model loader → carrier_scoring
-   ├─ HTTP GET /carriers/123/stats
-   └─ carrier_scoring.score_carrier(stats)
+### Admin
+- `GET /api/admin/health/models` - Model registry health
+- `GET /api/admin/health/services` - Backend services health
+- `GET /api/admin/system/info` - System information
 
-3. Dashboard ← { message: "...", data: {...}, proofs: {...} }
-```
+---
 
-## API Endpoints
+## 🔐 RBAC Matrix
 
-### Chat
-- `POST /api/ai/chat` - Send message to AI assistant
-- `GET /api/ai/chat/history/{conversation_id}` - Get conversation history
-- `DELETE /api/ai/chat/history/{conversation_id}` - Delete conversation
+| Role | Chat | Voice | Slots | Operator | Analytics | STT | Admin |
+|------|------|-------|-------|----------|-----------|-----|-------|
+| **ADMIN** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **OPERATOR** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **CARRIER** | ✅ | ✅ | ✅ (own) | ❌ | ❌ | ✅ | ❌ |
+| **PUBLIC** | ❌ | ✅ | ✅ (limited) | ❌ | ❌ | ✅ | ❌ |
 
-### ML Features
-- `POST /api/traffic/predict` - Predict traffic peaks
-- `POST /api/anomalies/detect` - Detect anomalies
+---
 
-### Algorithms
-- `POST /api/slots/recommend` - Get slot recommendations
-- `POST /api/carriers/score` - Calculate carrier score
-
-### Role-Specific
-- `GET /api/admin/stress-index` - Port stress index (ADMIN only)
-- `GET /api/operator/anomalies-summary` - Anomaly summary (OPERATOR only)
-
-## Agent Routing
-
-| Intent | Agent | Tools |
-|--------|-------|-------|
-| booking_status | booking_agent | booking_service_client, nest_client |
-| booking_create | booking_create_agent | booking_write_client, slot_service_client, slot_recommender, carrier_scoring |
-| slot_availability | slot_agent | slot_service_client, time_tool |
-| passage_history | booking_agent | booking_service_client, blockchain_tool |
-| traffic_forecast | traffic_agent | traffic_model, time_tool |
-| anomaly_check | anomaly_agent | anomaly_model, booking_service_client |
-| carrier_score | carrier_score_agent | carrier_scoring, carrier_service_client |
-| recommendation | recommendation_agent | slot_recommender, carrier_scoring |
-| blockchain_audit | blockchain_audit_agent | blockchain_tool |
-
-## RBAC Matrix
-
-| Role | Chat | Traffic | Anomalies | Slots | Carriers | Stress Index | Operator Summary |
-|------|------|---------|-----------|-------|----------|--------------|------------------|
-| ADMIN | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| OPERATOR | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ |
-| CARRIER | ✓ | ✓ | ✗ | ✓ | ✓ (own) | ✗ | ✗ |
-| DRIVER | ✓ | ✓ | ✗ | ✓ | ✓ (own) | ✗ | ✗ |
-
-## Environment Variables
+## ⚙️ Environment Variables
 
 Create a `.env` file:
 
 ```env
-# Core services
+# Core Services
 NEST_BASE_URL=http://localhost:3001
 BOOKING_SERVICE_URL=http://localhost:3002
 SLOT_SERVICE_URL=http://localhost:3003
 CARRIER_SERVICE_URL=http://localhost:3004
+ANALYTICS_SERVICE_URL=http://localhost:3005
+BLOCKCHAIN_SERVICE_URL=http://localhost:3010
 
 # Booking Write Service
 BOOKING_CREATE_PATH=/bookings
@@ -320,7 +235,7 @@ STT_COMPUTE_TYPE=int8  # int8|float16|float32
 STT_MAX_AUDIO_MB=15
 STT_TIMEOUT=30.0
 
-# STTExternal API (if using external_api provider)
+# STT External API (if using external_api provider)
 # STT_SERVICE_URL=http://localhost:9000
 # STT_TRANSCRIBE_PATH=/transcribe
 # STT_API_KEY=optional-key
@@ -348,7 +263,9 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 ```
 
-## Setup
+---
+
+## 🚀 Setup & Installation
 
 ```bash
 # Create virtual environment
@@ -362,17 +279,22 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-## Development
+---
+
+## 🧪 Testing
 
 ```bash
 # Run all tests
 pytest
 
 # Run specific test suite
-pytest app/tests/test_booking_create.py -v
+pytest tests/test_operator_analytics.py -v
 
 # Run with coverage
 pytest --cov=app --cov-report=html
+
+# Run agent tests
+pytest tests/test_agent_complete.py -v
 
 # Format code
 black app/
@@ -382,13 +304,49 @@ flake8 app/
 mypy app/
 ```
 
-## Example Usage
+---
 
-### Booking Creation Examples
+## 📖 Example Usage
 
+### Voice Chat (Darija)
+```bash
+curl -X POST http://localhost:8000/api/chat/voice \
+  -F "file=@booking_request.mp3" \
+  -F "user_role=CARRIER" \
+  -F "language_hint=ar-dz"
+```
+
+### Operator Analytics
+```bash
+curl "http://localhost:8000/api/operator/ai-overview?operator_id=OP123&terminal=A&days=30" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+### Monthly Forecast
+```bash
+curl "http://localhost:8000/api/operator/month-forecast?operator_id=OP123&month=2026-03&capacity_boost_pct=10" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+### Slot Recommendation
+```bash
+curl -X POST http://localhost:8000/api/slots/recommend \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "terminal": "A",
+    "date": "2026-02-07",
+    "carrier_id": "CAR123",
+    "requested_time": "14:00"
+  }'
+```
+
+### Booking Creation
 ```bash
 # Direct booking with slot_id
-curl -X POST http://localhost:8000/api/ai/chat \
+curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -397,7 +355,7 @@ curl -X POST http://localhost:8000/api/ai/chat \
   }'
 
 # Smart booking without slot_id (auto-recommend)
-curl -X POST http://localhost:8000/api/ai/chat \
+curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -406,36 +364,83 @@ curl -X POST http://localhost:8000/api/ai/chat \
   }'
 ```
 
-## Integration with NestJS Backend
+---
 
-The AI service communicates with the NestJS backend via HTTP:
-- Authentication headers forwarded from frontend
-- Real-time data queries for bookings, slots, carriers
-- No direct database access (service isolation)
+## 🏗️ Architecture
 
-## Blockchain Integration
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete architecture documentation.
 
-Read-only blockchain queries via:
-- HTTP API endpoint (recommended for hackathon)
-- Direct smart contract calls (if Web3 provider available)
-
-Query types:
-- Booking validation events
-- Gate entry/exit timestamps
-- Refusal records
-- No-show evidence
-
-Blockchain proof is attached to chat responses for transparency.
-
-## Next Steps
-
-1. Implement endpoint handlers in `api/` files
-2. Build orchestrator logic and agent routing
-3. Train and deploy ML models
-4. Implement algorithm business logic
-5. Add comprehensive tests
-6. Deploy to production
+### Key Design Patterns
+- **Multi-Agent Architecture**: Specialized agents for different domains
+- **Connection Pooling**: Singleton HTTP clients with graceful shutdown
+- **RBAC Enforcement**: Role-based access control at API and agent levels
+- **Trace ID Propagation**: Request tracing across all services
+- **Graceful Degradation**: Fallback to deterministic mode if LLM unavailable
+- **REAL-ONLY Mode**: Analytics modules work with real backend data only
 
 ---
 
-**Built for MicroHack-3 Hackathon** 🚀
+## 🔗 Backend Dependencies
+
+The AI Service integrates with the following microservices:
+
+1. **NestJS Backend** (:3001) - Authentication, conversation persistence
+2. **Booking Service** (:3002) - Booking CRUD operations
+3. **Slot Service** (:3003) - Slot availability and capacity
+4. **Carrier Service** (:3004) - Carrier statistics and profiles
+5. **Analytics Service** (:3005) - Operational metrics and aggregations
+6. **Blockchain Service** (:3010) - Audit trail (read-only)
+7. **STT Service** - Local Whisper or external STT provider
+
+---
+
+## 📊 Key Features
+
+### Operator Analytics (NEW!)
+- **BA-Grade Insights**: Business Analyst level analytics with management scoring
+- **Operator Management Score**: 0-100 score based on decision quality, utilization, patterns
+- **Planning Quality**: GOOD/RISK/CRITICAL assessment
+- **Behavior Pattern Detection**: Identifies unusual operator behavior
+- **Capacity Utilization Analysis**: Slot capacity vs throughput analysis
+- **Monthly Forecasting**: 1-month ahead predictions with saturation risk
+- **What-If Simulation**: Capacity boost scenarios
+- **AGNO Polishing**: LLM-generated executive summaries
+
+### STT (Speech-to-Text)
+- **Algerian Darija Support**: Native support for ar-dz language
+- **Multi-Language**: Arabic, French, English
+- **Local Whisper**: Privacy-focused local processing
+- **Normalization**: Optional Darija text normalization
+- **Voice-to-Chat**: Seamless integration with chatbot
+
+---
+
+## 📝 Documentation
+
+- [README.md](./README.md) - This file (overview and quick start)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Complete architecture documentation
+- [AI_SERVICE_API_SPEC.md](../Endpoint%20doc/AI_SERVICE_API_SPEC.md) - Complete API specification
+- [Swagger UI](http://localhost:8000/docs) - Interactive API documentation
+- [ReDoc](http://localhost:8000/redoc) - Alternative API documentation
+
+---
+
+## 🚢 Deployment
+
+### Production Checklist
+1. ✅ Configure all backend service URLs
+2. ✅ Set up authentication/authorization
+3. ✅ Enable CORS for allowed origins
+4. ✅ Set `ENVIRONMENT=production`
+5. ✅ Set `LOG_LEVEL=INFO`
+6. ✅ Verify backend services are reachable
+7. ✅ Test RBAC enforcement
+8. ✅ Load test critical endpoints
+9. ✅ Set up monitoring and alerting
+10. ✅ Configure STT service (if using external provider)
+
+---
+
+**Built for Smart Port Truck Booking Management** 🚀  
+**Version**: 1.0.0  
+**Status**: Production Ready ✅
