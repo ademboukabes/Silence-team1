@@ -138,8 +138,11 @@ export class BookingsService {
       data.qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.id}`;
       actionType = 'BOOKING_CONFIRMED';
 
-      // MOCK EMAIL SENDING
-      this.logger.log(`📧 SENDING EMAIL to ${booking.driverEmail} with QR Code for booking ${booking.id}`);
+      // Send Email via Resend
+      await this.notificationService.sendBookingEmail('CONFIRMATION', {
+        ...booking,
+        qrCode: data.qrCode
+      });
     }
 
     if (status === BookingStatusUpdate.REJECTED || status === BookingStatusUpdate.CANCELLED) {
@@ -149,6 +152,12 @@ export class BookingsService {
         data: { currentBookings: { decrement: 1 } },
       });
       actionType = status === BookingStatusUpdate.REJECTED ? 'BOOKING_REJECTED' : 'BOOKING_CANCELLED';
+
+      // Send Email via Resend
+      await this.notificationService.sendBookingEmail(
+        status === BookingStatusUpdate.REJECTED ? 'REJECTION' : 'CANCELLATION',
+        booking
+      );
     }
 
     // 3. Update & Log
