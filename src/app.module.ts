@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { UserModule } from './modules/user/user.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CacheConfigModule } from './modules/cache/cache.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { PaginationInterceptor } from './interceptors/pagination.interceptor';
@@ -25,6 +26,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       ttl: 60000,
       limit: 10,
     }]),
+    CacheConfigModule,
     UserModule,
     BookingsModule,
     AuthModule,

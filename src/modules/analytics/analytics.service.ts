@@ -1,11 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class AnalyticsService {
     private readonly logger = new Logger(AnalyticsService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    ) { }
 
     async getOperatorLogs(
         operatorId: string,
@@ -75,6 +80,14 @@ export class AnalyticsService {
         terminal?: string,
         gate?: string,
     ) {
+        const cacheKey = `metrics:${operatorId}:${from.getTime()}:${to.getTime()}:${groupBy}:${terminal || 'all'}:${gate || 'all'}`;
+        const cached = await this.cacheManager.get(cacheKey);
+        if (cached) {
+            this.logger.log(`✅ Cache HIT for metrics: ${cacheKey}`);
+            return cached;
+        }
+        this.logger.log(`❌ Cache MISS for metrics: ${cacheKey}`);
+
         const opIdNum = parseInt(operatorId, 10);
 
         // Fetch relevant audit logs for the period
@@ -129,7 +142,7 @@ export class AnalyticsService {
             congestion_events: 0,
         };
 
-        return {
+        const result = {
             ok: true,
             data: {
                 operator_id: operatorId,
@@ -139,5 +152,8 @@ export class AnalyticsService {
                 totals,
             },
         };
+
+        await this.cacheManager.set(cacheKey, result, 300 * 1000); // 5 minutes cache
+        return result;
     }
 }
