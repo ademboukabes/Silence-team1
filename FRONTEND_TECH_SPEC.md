@@ -128,12 +128,21 @@ export interface Carrier {
 
 ### 🔐 Authentification (`/auth`)
 
+Le système utilise désormais des **Cookies HttpOnly** pour une sécurité accrue (protection XSS).
+
 | Méthode | Endpoint | Body (JSON) | Réponse | Notes |
 |---------|----------|-------------|---------|-------|
-| `POST` | `/signup` | `{ name, email, password, role?, firstName?, lastName?, birthDate?, nin?, carrierId?, terminalId? }` | `{ message, user: User, access_token: string }` | Le rôle par défaut est `CARRIER`. Token également stocké dans cookie HttpOnly. |
-| `POST` | `/login` | `{ email, password }` | `{ message, user: User, access_token: string }` | Token également stocké dans cookie HttpOnly. |
-| `POST` | `/logout` | - | `{ message }` | Efface le cookie `access_token`. |
-| `GET` | `/profile` | - | `User` | **Nécessite** `Authorization: Bearer <token>` |
+| `POST` | `/signup` | `{ name, email, password, role?, ... }` | `{ message, access_token }` | Le token est injecté dans un cookie `access_token` (HttpOnly). |
+| `POST` | `/login` | `{ email, password }` | `{ message, access_token }` | Le token est injecté dans un cookie `access_token` (HttpOnly). |
+| `POST` | `/logout` | - | `{ message: "Logged out" }` | Efface le cookie `access_token`. |
+| `GET` | `/profile` | - | `User` | Reconnaît le cookie automatiquement. |
+
+#### 💡 Utilisation Frontend (IMPORTANT)
+1. **Automatique** : Le navigateur gère le stockage et l'envoi du token via les cookies.
+2. **Configuration** : Pour que vos requêtes (Axios/Fetch) incluent les cookies :
+   - **Axios** : Ajoutez `axios.defaults.withCredentials = true;` ou `{ withCredentials: true }` dans la configuration de la requête.
+   - **Fetch** : Ajoutez `credentials: 'include'` dans les options.
+3. **Compatibilité** : Le serveur accepte toujours le header `Authorization: Bearer <token>` si nécessaire.
 
 ---
 
