@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards, Request, Put } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './bookingDTO/createBooking.dto';
+import { UpdateBookingStatusDto } from './bookingDTO/updateBookingStatus.dto';
 import { AuthGuard } from '../../guards/auth.guard';
 import { RolesGuard, Roles } from '../../guards/roles.guard';
 import { ApiTags } from '@nestjs/swagger';
@@ -14,19 +15,16 @@ export class BookingsController {
   @Post()
 
   create(@Request() req, @Body() dto: CreateBookingDto) {
-    return this.bookingsService.createBooking(req.user.sub, dto);
+    return this.bookingsService.createBooking(req.user.sub, req.user.role, dto);
   }
 
-  @Put(':id/confirm')
-
-  confirm(@Param('id') id: string) {
-    return this.bookingsService.confirmBooking(id);
-  }
-
-  @Put(':id/reject')
-
-  reject(@Param('id') id: string) {
-    return this.bookingsService.rejectBooking(id);
+  @Put(':id/status')
+  updateStatus(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: UpdateBookingStatusDto
+  ) {
+    return this.bookingsService.updateBookingStatus(id, dto.status, req.user.sub, req.user.role);
   }
 
   @Get()

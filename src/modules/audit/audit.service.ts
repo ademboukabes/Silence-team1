@@ -9,6 +9,7 @@ export class AuditLogService {
 
     async logAction(
         userId: number,
+        actionType: string,
         action: string,
         entityType: string,
         entityId: string,
@@ -17,14 +18,15 @@ export class AuditLogService {
         try {
             await this.prisma.auditLog.create({
                 data: {
-                    userId,
+                    userId: userId === 0 ? null : userId,
+                    actionType,
                     action,
                     entityType,
                     entityId,
                     details: details ? JSON.stringify(details) : null,
                 },
             });
-            this.logger.log(`Audit Log Created: User ${userId} performed ${action} on ${entityType} ${entityId}`);
+            this.logger.log(`Audit Log Created: ${userId === 0 ? 'SYSTEM' : `User ${userId}`} performed ${actionType}:${action} on ${entityType} ${entityId}`);
         } catch (error) {
             this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);
         }

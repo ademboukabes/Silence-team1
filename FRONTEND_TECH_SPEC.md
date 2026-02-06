@@ -74,7 +74,14 @@ export interface Booking {
   userId: number;
   createdAt: string; // ISO Date
   updatedAt: string; // ISO Date
-  
+
+  // Informations Chauffeur (Refonte Real Port Workflow)
+  driverName: string;
+  driverEmail: string;
+  driverPhone: string;
+  driverMatricule: string;
+  merchandiseDescription?: string;
+
   // Relations souvent incluses dans les réponses
   truck?: Truck;
   gate?: Gate;
@@ -121,12 +128,21 @@ export interface Carrier {
 
 ### 🔐 Authentification (`/auth`)
 
+Le système utilise désormais des **Cookies HttpOnly** pour une sécurité accrue (protection XSS).
+
 | Méthode | Endpoint | Body (JSON) | Réponse | Notes |
 |---------|----------|-------------|---------|-------|
-| `POST` | `/signup` | `{ name, email, password, role?, firstName?, lastName?, birthDate?, nin?, carrierId?, terminalId? }` | `{ message, user: User, access_token: string }` | Le rôle par défaut est `CARRIER`. Token également stocké dans cookie HttpOnly. |
-| `POST` | `/login` | `{ email, password }` | `{ message, user: User, access_token: string }` | Token également stocké dans cookie HttpOnly. |
-| `POST` | `/logout` | - | `{ message }` | Efface le cookie `access_token`. |
-| `GET` | `/profile` | - | `User` | **Nécessite** `Authorization: Bearer <token>` |
+| `POST` | `/signup` | `{ name, email, password, role?, ... }` | `{ message, access_token }` | Le token est injecté dans un cookie `access_token` (HttpOnly). |
+| `POST` | `/login` | `{ email, password }` | `{ message, access_token }` | Le token est injecté dans un cookie `access_token` (HttpOnly). |
+| `POST` | `/logout` | - | `{ message: "Logged out" }` | Efface le cookie `access_token`. |
+| `GET` | `/profile` | - | `User` | Reconnaît le cookie automatiquement. |
+
+#### 💡 Utilisation Frontend (IMPORTANT)
+1. **Automatique** : Le navigateur gère le stockage et l'envoi du token via les cookies.
+2. **Configuration** : Pour que vos requêtes (Axios/Fetch) incluent les cookies :
+   - **Axios** : Ajoutez `axios.defaults.withCredentials = true;` ou `{ withCredentials: true }` dans la configuration de la requête.
+   - **Fetch** : Ajoutez `credentials: 'include'` dans les options.
+3. **Compatibilité** : Le serveur accepte toujours le header `Authorization: Bearer <token>` si nécessaire.
 
 ---
 
@@ -148,12 +164,10 @@ export interface Carrier {
 
 | Méthode | Endpoint | Body | Réponse | Logique Métier |
 |---------|----------|------|---------|----------------|
-| `POST` | `/` | `{ gateId, truckId, carrierId, timeSlotId, notes? }` | `Booking` | Crée une réservation en `PENDING`. Vérifie la capacité du slot. |
+| `POST` | `/` | `{ gateId, truckId, carrierId, timeSlotId, driverName, driverEmail, driverPhone, driverMatricule, merchandiseDescription?, notes? }` | `Booking` | Crée une réservation en `PENDING`. Vérifie la capacité du slot. |
 | `GET` | `/` | - | `Booking[]` | Liste toutes les réservations. |
 | `GET` | `/:id` | - | `Booking` | Récupère une réservation par ID (UUID). |
-| `PUT` | `/:id/confirm` | - | `Booking` | **Operator Only**. Change statut → `CONFIRMED`. Génère QR Code. |
-| `PUT` | `/:id/reject` | - | `Booking` | **Operator Only**. Change statut → `REJECTED`. Libère le slot. |
-| `PUT` | `/:id/cancel` | - | `Booking` | **Carrier Only**. Change statut → `CANCELLED`. Libère le slot. |
+| `PUT` | `/:id/status` | - | `Booking` | **Unified Endpoint**. Change statut (`CONFIRMED`, `REJECTED`, `CANCELLED`). Logique de QR/Blockchain intégrée. |
 
 ---
 
@@ -181,9 +195,9 @@ export interface Carrier {
 | Événement | Payload | Description |
 |-----------|---------|-------------|
 | `BOOKING_STATUS_CHANGED` | `{ bookingId, newStatus }` | Notification de changement de statut. |
-| `BOOKING_REQUESTED` | `{ terminalId, bookingId }` | Nouvelle requête (Operator). |
-| `CAPACITY_ALERT` | `{ gateId, name, currentLoad }` | Alerte capacité (Operator). |
-| `GATE_PASSAGE` | `{ gateId, bookingId, status }` | Notification de passage. |
+| `BOOKING_CREATED` | `{ terminalId, bookingId, slotTime }` | Nouvelle requête (Operator). |
+| `CAPACITY_ALERT` | `{ gateId, gateName, currentLoad, maxCapacity }` | Alerte capacité (Operator). |
+| `GATE_PASSAGE` | `{ gateId, gateName, bookingRef, truckPlate, status }` | Notification de passage. |
 
 ---
 

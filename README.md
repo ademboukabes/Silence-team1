@@ -53,8 +53,6 @@ Le projet repose sur une architecture **Monolithe Modulaire** robuste :
 
 ## 🚀 Installation & Lancement (Docker-First)
 
-> [!NOTE]
-> Cette branche `issam-test` contient les dernières corrections de stabilité, notamment la correction du démarrage de l'application NestJS.
 
 Plus besoin de configurer localement Node.js ou PostgreSQL. Le projet est entièrement conteneurisé.
 

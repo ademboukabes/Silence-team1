@@ -12,11 +12,10 @@ export class WebsocketService {
 
     notifyOperators(terminalId: string, event: string, payload: any) {
         if (this.server) {
-            // Logic for terminal specific room if we had it:
-            // this.server.to(`terminal_${terminalId}`).emit(event, payload);
-
-            // For now, notify all operators
+            // Notify all types of operators/admins
+            this.server.to('role_TERMINAL_OPERATOR').emit(event, payload);
             this.server.to('role_OPERATOR').emit(event, payload);
+            this.server.to('role_ADMIN').emit(event, payload);
         }
     }
 

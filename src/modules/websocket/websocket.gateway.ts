@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { WebsocketService } from './websocket.service';
 import { Logger } from '@nestjs/common';
+import { jwtConstants } from '../auth/auth.constant';
 
 @WebSocketGateway({
     cors: {
@@ -32,6 +33,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     async handleConnection(client: Socket) {
         try {
+            this.logger.log(`Client checking connection: ${client.id}`);
             // Extract token from query or headers
             const token =
                 client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
@@ -44,27 +46,25 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
             // Verify JWT
             const payload = await this.jwtService.verifyAsync(token, {
-                // IMPORTANT: Reuse the secret from environment or constants
-                // Assuming process.env.JWT_SECRET is set or default 'secret' as per typical NestJS tutorials
-                // I will use a fallback 'secret' to match typical dev setups if config service isn't strictly used here yet
-                secret: process.env.JWT_SECRET || 'secret',
+                secret: process.env.JWT_SECRET || jwtConstants.secret,
             });
 
             // Join user-specific room
             const userId = payload.sub;
             client.join(`user_${userId}`);
-            this.logger.log(`User ${userId} joined room user_${userId}`);
+            this.logger.log(`✅ User ${userId} joined room user_${userId}`);
 
             // Join role-specific room
             if (payload.role) {
-                client.join(`role_${payload.role}`);
-                this.logger.log(`User ${userId} joined room role_${payload.role}`);
+                const roleRoom = `role_${payload.role}`;
+                client.join(roleRoom);
+                this.logger.log(`✅ User ${userId} joined room ${roleRoom}`);
             } else {
                 this.logger.warn(`User ${userId} has no role in payload.`);
             }
 
         } catch (err) {
-            this.logger.error(`Connection rejected for client ${client.id}: ${err.message}`);
+            this.logger.error(`❌ Connection rejected for client ${client.id}: ${err.message}`);
             client.disconnect();
         }
     }

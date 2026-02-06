@@ -94,32 +94,41 @@ model User {
 
 model AuditLog {
   id         Int      @id @default(autoincrement())
-  action     String
+  actionType String   // e.g., BOOKING_DECISION
+  action     String   // e.g., ACCEPTED
   entityType String
   entityId   String
   details    String?
-  userId     Int
+  userId     Int?
   timestamp  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
 }
 
 model Booking {
-  id         String        @id @default(uuid())
-  qrCode     String?
-  status     BookingStatus @default(PENDING)
-  notes      String?
-  userId     Int
-  gateId     Int
-  truckId    Int
-  carrierId  Int
-  timeSlotId Int
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  carrier    Carrier       @relation(fields: [carrierId], references: [id])
-  gate       Gate          @relation(fields: [gateId], references: [id])
-  timeSlot   TimeSlot      @relation(fields: [timeSlotId], references: [id])
-  truck      Truck         @relation(fields: [truckId], references: [id])
-  user       User          @relation(fields: [userId], references: [id])
+  id                     String        @id @default(uuid())
+  qrCode                 String?
+  status                 BookingStatus @default(PENDING)
+  notes                  String?
+  
+  // Driver information (drivers are NOT system users)
+  driverName             String
+  driverEmail            String
+  driverPhone            String
+  driverMatricule        String
+  merchandiseDescription String?
+  
+  userId                 Int
+  gateId                 Int
+  truckId                Int
+  carrierId              Int
+  timeSlotId             Int
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  carrier                Carrier       @relation(fields: [carrierId], references: [id])
+  gate                   Gate          @relation(fields: [gateId], references: [id])
+  timeSlot               TimeSlot      @relation(fields: [timeSlotId], references: [id])
+  truck                  Truck         @relation(fields: [truckId], references: [id])
+  user                   User          @relation(fields: [userId], references: [id])
 }
 
 model Notification {

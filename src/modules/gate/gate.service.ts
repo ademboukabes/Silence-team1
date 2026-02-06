@@ -48,19 +48,9 @@ export class GateService {
     }
 
     async validateEntry(gateId: number, dto: ValidateEntryDto) {
-        // 1. Validate input
-        if (!dto.bookingId && !dto.qrCode) {
-            throw new BadRequestException('Either bookingId or qrCode must be provided');
-        }
-
-        // 2. Find booking
-        const booking = await this.prisma.booking.findFirst({
-            where: {
-                OR: [
-                    { id: dto.bookingId },
-                    { qrCode: dto.qrCode },
-                ],
-            },
+        // 1. Find booking by UUID
+        const booking = await this.prisma.booking.findUnique({
+            where: { id: dto.bookingId },
             include: {
                 truck: true,
                 gate: true,
@@ -70,24 +60,34 @@ export class GateService {
         });
 
         if (!booking) {
-            throw new NotFoundException('Booking not found');
+            throw new NotFoundException('Booking not found or invalid QR');
         }
+
+        // 2. Audit QR Scan Attempt
+        await this.auditService.logAction(
+            0, // System actor for gate sensor
+            'QR_SCANNED',
+            'SCAN',
+            'BOOKING',
+            booking.id,
+            { gateId }
+        );
 
         // 3. Verify booking status
         if (booking.status !== BookingStatus.CONFIRMED) {
-            throw new BadRequestException(`Booking must be CONFIRMED first. Current status: ${booking.status}`);
+            throw new BadRequestException(`Access denied. Booking status: ${booking.status}`);
         }
 
         // 4. Verify gate match
         if (booking.gateId !== gateId) {
-            throw new ForbiddenException(`This booking is for gate "${booking.gate.name}", not this gate`);
+            throw new ForbiddenException(`Incorrect gate. Registered for "${booking.gate.name}"`);
         }
 
         // 5. Verify time window
         const now = new Date();
         if (now < booking.timeSlot.startTime || now > booking.timeSlot.endTime) {
             throw new BadRequestException(
-                `Entry time window is ${booking.timeSlot.startTime.toISOString()} - ${booking.timeSlot.endTime.toISOString()}`
+                `Out of time slot window. Slot: ${booking.timeSlot.startTime.toISOString()} - ${booking.timeSlot.endTime.toISOString()}`
             );
         }
 
@@ -101,44 +101,47 @@ export class GateService {
             },
         });
 
-        // 8. Emit WebSocket event
+        // 7. Emit WebSocket event
         this.wsService.notifyOperators('ALL', 'GATE_PASSAGE', {
             gateId: booking.gateId,
             gateName: booking.gate.name,
             bookingRef: booking.id,
-            truckPlate: booking.truck.licensePlate,
+            truckPlate: booking.truck?.licensePlate,
             timestamp: new Date(),
             status: 'GRANTED',
         });
 
-        // 8.5 Notarize on Blockchain
+        // 8. Notarize on Blockchain
         this.blockchainService.notarizeBooking(`ENTRY_${updatedBooking.id}`, {
             bookingRef: updatedBooking.id,
-            truck: updatedBooking.truck.licensePlate,
-            gate: updatedBooking.gate.name,
+            driver: (updatedBooking as any).driverName,
+            truck: updatedBooking.truck?.licensePlate,
+            gate: updatedBooking.gate?.name,
             passageTime: new Date().toISOString(),
             status: 'ENTRY_GRANTED',
         });
 
-        // 9. Audit log
+        // 9. Audit log entry grant
         await this.auditService.logAction(
-            booking.userId,
-            'GATE_PASSAGE',
+            0,
+            'ENTRY_GRANTED',
+            'GRANTED',
             'BOOKING',
-            booking.id.toString(),
+            booking.id,
             {
                 gateId: booking.gateId,
-                truckPlate: booking.truck.licensePlate,
+                truckPlate: (booking as any).truck?.licensePlate,
             }
         );
 
         return {
             success: true,
-            message: 'Entry granted',
+            message: 'Entry granted. Barrier opening...',
             booking: {
                 bookingRef: updatedBooking.id,
-                truck: updatedBooking.truck.licensePlate,
-                gate: updatedBooking.gate.name,
+                driver: (updatedBooking as any).driverName,
+                truck: (updatedBooking as any).truck?.licensePlate,
+                gate: (updatedBooking as any).gate?.name,
                 status: updatedBooking.status,
             },
         };

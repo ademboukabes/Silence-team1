@@ -54,4 +54,27 @@ export class NotificationService {
       throw new HttpException(error.message, error.status);
     }
   }
+
+  async sendBookingEmail(type: 'CONFIRMATION' | 'REJECTION' | 'CANCELLATION', booking: any) {
+    const { driverEmail, driverName, id, qrCode } = booking;
+
+    // In a real production system, this would use a service like SendGrid, Mailgun, or AWS SES
+    console.log(`--- [PRODUCTION NOTIFICATION LOG] ---`);
+    console.log(`To: ${driverEmail} (${driverName})`);
+    console.log(`Subject: Booking ${type} - ${id}`);
+
+    if (type === 'CONFIRMATION') {
+      console.log(`Body: Hello ${driverName}, your booking ${id} has been CONFIRMED.`);
+      console.log(`QR Code URL: ${qrCode}`);
+      console.log(`Please present this QR code at the gate.`);
+    } else if (type === 'REJECTION') {
+      console.log(`Body: Hello, your booking request ${id} has been REJECTED by the terminal operator.`);
+    } else {
+      console.log(`Body: Booking ${id} has been CANCELLED.`);
+    }
+    console.log(`-------------------------------------`);
+
+    // We could also record this in the database if needed
+    return true;
+  }
 }

@@ -4,6 +4,12 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
+    console.log('--- SEED DEBUG ---');
+    console.log('Current Host Time (JS):', new Date().toLocaleString());
+    console.log('Current Host Time (ISO):', new Date().toISOString());
+    console.log('------------------');
+
+    // Clear Database
     console.log('Seeding data...');
 
     // Cleanup
@@ -44,15 +50,15 @@ async function main() {
                             timeSlots: {
                                 create: [
                                     {
-                                        startTime: new Date(new Date().setDate(new Date().getDate() + 1)), // Same time tomorrow
-                                        endTime: new Date(new Date(new Date().setDate(new Date().getDate() + 1)).setHours(new Date().getHours() + 1)),
-                                        maxCapacity: 5,
+                                        startTime: new Date(new Date().getTime() - 60 * 60 * 1000), // Started 1 hour ago
+                                        endTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000),  // Ends in 2 hours
+                                        maxCapacity: 10,
                                         currentBookings: 0
                                     },
                                     {
-                                        startTime: new Date(new Date().setDate(new Date().getDate() + 2)), // Day after tomorrow
-                                        endTime: new Date(new Date(new Date().setDate(new Date().getDate() + 2)).setHours(15, 0, 0, 0)),
-                                        maxCapacity: 2,
+                                        startTime: new Date(new Date().getTime() + 24 * 60 * 60 * 1000), // Tomorrow
+                                        endTime: new Date(new Date().getTime() + 26 * 60 * 60 * 1000),   // Tomorrow + 2h
+                                        maxCapacity: 10,
                                         currentBookings: 0
                                     }
                                 ]
@@ -107,6 +113,11 @@ async function main() {
             truckId: truck.id,
             timeSlotId: slot.id,
             notes: 'Demo booking',
+            driverName: 'John Doe',
+            driverEmail: 'driver@maersk.com',
+            driverPhone: '+31612345678',
+            driverMatricule: 'DRV-12345',
+            merchandiseDescription: 'General Cargo',
         }
     });
 
