@@ -117,17 +117,29 @@ async function runCompleteDemo() {
 
         log('📅', `Fetching slots for Gate ${targetGate.name}...`, colors.blue);
         const gateInfo = await apiCall('GET', `/gates/${targetGate.id}`, null, carrierToken);
-        const slots = gateInfo.data.timeSlots;
+        const slots = gateInfo.data.timeSlots || [];
 
-        if (!slots || slots.length === 0) {
+        if (slots.length === 0) {
             log('❌', `No slots found for gate ${targetGate.id}.`, colors.red);
             return;
         }
 
-        const slot = slots[0];
+        // Find an active slot (now between startTime and endTime)
+        const now = new Date();
+        let slot = slots.find(s => {
+            const start = new Date(s.startTime);
+            const end = new Date(s.endTime);
+            return now >= start && now <= end;
+        });
+
+        if (!slot) {
+            log('⚠️', 'No active slot found. Falling back to first available.', colors.yellow);
+            slot = slots[0];
+        }
+
         log('📊', `Selected Slot:`, colors.cyan);
         console.log(`   • Slot ID: ${slot.id}`);
-        console.log(`   • Time: ${new Date(slot.startTime).toLocaleString()}`);
+        console.log(`   • Time Window: ${new Date(slot.startTime).toLocaleString()} - ${new Date(slot.endTime).toLocaleString()}`);
         console.log(`   • Capacity: ${slot.currentBookings}/${slot.maxCapacity}`);
 
         await wait(1000);
@@ -168,7 +180,12 @@ async function runCompleteDemo() {
             truckId: truck.id,
             carrierId: carrier.id,
             gateId: targetGate.id,
-            notes: 'Demo booking - Core flow test'
+            notes: 'Demo booking - Core flow test',
+            driverName: 'John Doe',
+            driverEmail: 'driver@maersk.com',
+            driverPhone: '+31612345678',
+            driverMatricule: 'DRV-12345',
+            merchandiseDescription: 'General Cargo'
         }, carrierToken);
 
         if (bookingRes.status !== 201 && bookingRes.status !== 200) {
@@ -178,6 +195,7 @@ async function runCompleteDemo() {
 
         const booking = bookingRes.data;
         log('✅', `Booking created! UUID: ${booking.id}`, colors.green);
+        console.log(`   • Driver: ${booking.driverName} (${booking.driverEmail})`);
         console.log(`   • Status: ${booking.status}`);
 
         await wait(1000);
@@ -188,7 +206,9 @@ async function runCompleteDemo() {
         header('👨‍💼 STEP 5: Operator Confirmation');
 
         log('🔍', 'Operator reviewing and confirming booking...', colors.blue);
-        const confirmRes = await apiCall('PUT', `/bookings/${booking.id}/confirm`, {}, operatorToken);
+        const confirmRes = await apiCall('PUT', `/bookings/${booking.id}/status`, {
+            status: 'CONFIRMED'
+        }, operatorToken);
 
         if (confirmRes.status !== 200) {
             log('❌', `Confirmation failed: ${JSON.stringify(confirmRes.data)}`, colors.red);

@@ -53,8 +53,8 @@ Le schéma Prisma définit une hiérarchie stricte assurant l'intégrité des op
 | **Terminal** | Zone logistique majeure. | `name`, `portId`. | `1:N` avec `Gate`. |
 | **Gate** | Point d'entrée/sortie physique. | `name`, `type` (IN/OUT/GENERIC). | `1:N` avec `TimeSlot`, `Booking`. |
 | **TimeSlot** | Créneau horaire de réservation. | `startTime`, `maxCapacity`, `currentBookings`.| `1:N` avec `Booking`. |
-| **Booking** | Réservation de passage (Cœur métier).| `id` (UUID), `status`, `qrCode`. | Lien entre `User`, `Gate`, `Truck`, `Slot`. |
-| **AuditLog** | Registre immuable des actions. | `action`, `entityId`, `details`. | `N:1` avec `User`. |
+| **Booking** | Réservation de passage (Cœur métier).| `id` (UUID), `status`, `driverName`, `qrCode`. | Lien entre `User`, `Gate`, `Truck`, `Slot`, `Carrier`. |
+| **AuditLog** | Registre immuable des actions. | `actionType`, `entityId`, `userId?`. | `N:1` avec `User` (optionnel pour SYSTEM). |
 | **Conversation**| Historique Chat IA. | `userId`, `userRole`. | `1:N` avec `Message`. |
 
 ### Rôles (Enums)
@@ -90,8 +90,8 @@ Le schéma Prisma définit une hiérarchie stricte assurant l'intégrité des op
 
 | Méthode | URL | Rôles | Entrée (JSON) | Logique |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/` | `CARRIER` | `{ gateId, truckId, timeSlotId }` | Vérifie la capacité du slot et émet `BOOKING_REQUESTED`. |
-| `PUT` | `/:id/status` | `TDR Role`| `{ action: "CONFIRM" }` | Valide la résa (si Opérateur), génère le QR, écrit sur Blockchain. |
+| `POST` | `/` | `CARRIER` | `{ gateId, truckId, timeSlotId, driverName, ... }` | Vérifie la capacité du slot et émet `BOOKING_CREATED`. |
+| `PUT` | `/:id/status` | `Operator/Carrier`| `{ status: "CONFIRMED" }` | Unified endpoint. Valide (Opérateur) ou Annule (Carrier). Gère QR/Blockchain. |
 | `GET` | `/` | Tous | - | Filtre auto selon le rôle (Carrier voit les siens, Operator voit tout). |
 
 ---
@@ -157,6 +157,6 @@ npx prisma db push
 ### Script de Vérification
 Un script automatisé est disponible pour valider l'intégrité du système de A à Z :
 ```bash
-npx ts-node scripts/verify-flow.ts
+npx node scripts/test_all.js
 ```
-**Il teste successivement :** Création compagnie -> Inscription utilisateur -> Création Camion -> Recherche Slot -> Réservation -> Annulation -> Chat IA.
+**Il teste successivement :** Login Opérateur -> Signup Carrier -> Découverte Infrastructure -> Création Booking (Driver) -> Confirmation -> Validation Porte -> Audit.

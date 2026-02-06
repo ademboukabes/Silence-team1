@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { CreateBookingDto } from './bookingDTO/createBooking.dto';
 import { BookingStatus } from '@prisma/client';
@@ -6,17 +6,26 @@ import { WebsocketService } from '../websocket/websocket.service';
 import { BookingCreatedPayload, CapacityAlertPayload } from '../websocket/interfaces/ws.interfaces';
 import { AuditLogService } from '../audit/audit.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
+import { NotificationService } from '../notification/notification.service';
+import { BookingStatusUpdate } from './bookingDTO/updateBookingStatus.dto';
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger('BookingsService');
   constructor(
     private prisma: PrismaService,
     private wsService: WebsocketService,
     private auditService: AuditLogService,
     private blockchainService: BlockchainService,
+    private notificationService: NotificationService,
   ) { }
 
-  async createBooking(userId: number, dto: CreateBookingDto) {
+  async createBooking(userId: number, role: string, dto: CreateBookingDto) {
+    // 0. Enforce CARRIER role (or ADMIN)
+    if (role !== 'CARRIER' && role !== 'ADMIN') {
+      throw new HttpException('Only carriers can create bookings', HttpStatus.FORBIDDEN);
+    }
+
     // 1. Validate Time Slot
     const slot = await this.prisma.timeSlot.findUnique({
       where: { id: dto.timeSlotId },
@@ -51,8 +60,8 @@ export class BookingsService {
 
       // Notify Operators
       const bookingPayload: BookingCreatedPayload = {
-        terminalId: "ALL", // Ideally we get this from Gate -> Terminal
-        bookingId: booking.id.toString(),
+        terminalId: "ALL",
+        bookingId: booking.id as string,
         slotTime: slot.startTime
       };
       this.wsService.notifyOperators("ALL", "BOOKING_CREATED", bookingPayload);
@@ -62,7 +71,7 @@ export class BookingsService {
       if (capacityPercentage >= 90) {
         const alertPayload: CapacityAlertPayload = {
           gateId: slot.gateId.toString(),
-          gateName: slot.gate.name,
+          gateName: (slot as any).gate.name,
           currentLoad: slot.currentBookings,
           maxCapacity: slot.maxCapacity
         };
@@ -70,9 +79,10 @@ export class BookingsService {
       }
 
       // Log Action
-      await this.auditService.logAction(userId, 'CREATE_BOOKING', 'BOOKING', booking.id.toString(), {
+      await this.auditService.logAction(userId, 'BOOKING_CREATED', 'CREATED', 'BOOKING', booking.id, {
         timeSlotId: slot.id,
-        truckId: dto.truckId
+        truckId: dto.truckId,
+        driverEmail: (dto as any).driverEmail
       });
 
       return booking;
@@ -86,66 +96,90 @@ export class BookingsService {
     }
   }
 
-  async confirmBooking(id: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { id } });
+  async updateBookingStatus(id: string, status: BookingStatusUpdate, actorId: number, actorRole: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: { carrier: true, truck: true, gate: true, timeSlot: true, user: true }
+    });
+
     if (!booking) throw new HttpException('Booking not found', HttpStatus.NOT_FOUND);
 
-    if (booking.status !== BookingStatus.PENDING) {
-      throw new HttpException('Booking already processed', HttpStatus.BAD_REQUEST);
+    // 1. Authorization & Business Rules
+    if (status === BookingStatusUpdate.CONFIRMED || status === BookingStatusUpdate.REJECTED) {
+      const allowedRoles = ['TERMINAL_OPERATOR', 'PORT_ADMIN', 'ADMIN'];
+      if (!allowedRoles.includes(actorRole)) {
+        throw new HttpException('Only operators can confirm or reject bookings', HttpStatus.FORBIDDEN);
+      }
     }
 
-    // Generate QR Code (Mock URL)
-    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.id}`;
+    if (status === BookingStatusUpdate.CANCELLED) {
+      const allowedRoles = ['CARRIER', 'DRIVER', 'ADMIN'];
+      if (!allowedRoles.includes(actorRole)) {
+        throw new HttpException('Only carriers can cancel bookings', HttpStatus.FORBIDDEN);
+      }
+      if (actorRole === 'CARRIER' && booking.userId !== actorId) {
+        throw new HttpException('You can only cancel your own bookings', HttpStatus.FORBIDDEN);
+      }
+    }
 
-    await this.auditService.logAction(booking.userId, 'CONFIRM_BOOKING', 'BOOKING', booking.id.toString());
+    if (booking.status === BookingStatus.CONSUMED) {
+      throw new HttpException('Cannot change status of a consumed booking', HttpStatus.BAD_REQUEST);
+    }
 
-    await this.auditService.logAction(booking.userId, 'CONFIRM_BOOKING', 'BOOKING', booking.id.toString());
+    // 2. Logic based on status
+    let data: any = { status };
+    let actionType = 'BOOKING_STATUS_UPDATE';
+    let action = status.toString();
 
+    if (status === BookingStatusUpdate.CONFIRMED) {
+      if (booking.status !== BookingStatus.PENDING) {
+        throw new HttpException('Can only confirm pending bookings', HttpStatus.BAD_REQUEST);
+      }
+      data.qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.id}`;
+      actionType = 'BOOKING_CONFIRMED';
+
+      // MOCK EMAIL SENDING
+      this.logger.log(`📧 SENDING EMAIL to ${booking.driverEmail} with QR Code for booking ${booking.id}`);
+    }
+
+    if (status === BookingStatusUpdate.REJECTED || status === BookingStatusUpdate.CANCELLED) {
+      // Free up capacity
+      await this.prisma.timeSlot.update({
+        where: { id: booking.timeSlotId },
+        data: { currentBookings: { decrement: 1 } },
+      });
+      actionType = status === BookingStatusUpdate.REJECTED ? 'BOOKING_REJECTED' : 'BOOKING_CANCELLED';
+    }
+
+    // 3. Update & Log
     const updatedBooking = await this.prisma.booking.update({
       where: { id },
-      data: {
-        status: BookingStatus.CONFIRMED,
-        qrCode,
-      },
+      data,
       include: { truck: true, gate: true, carrier: true, timeSlot: true, user: true },
     });
 
-    // Notarize on Blockchain
-    this.blockchainService.notarizeBooking(updatedBooking.id, {
-      bookingRef: updatedBooking.id,
-      carrier: updatedBooking.carrier?.name,
-      truck: updatedBooking.truck?.licensePlate,
-      gate: updatedBooking.gate?.name,
-      timeSlot: updatedBooking.timeSlot?.startTime,
-      user: updatedBooking.user?.email,
-      timestamp: new Date().toISOString(),
+    await this.auditService.logAction(actorId, actionType, action, 'BOOKING', id);
+
+    // AI-Ready Notification
+    this.wsService.notifyUser(booking.userId.toString(), 'BOOKING_STATUS_CHANGED', {
+      bookingId: id,
+      newStatus: status
     });
+
+    // Blockchain Notarization on confirmation
+    if (status === BookingStatusUpdate.CONFIRMED) {
+      this.blockchainService.notarizeBooking(updatedBooking.id, {
+        bookingRef: updatedBooking.id,
+        driver: updatedBooking.driverName,
+        truck: updatedBooking.truck?.licensePlate,
+        gate: updatedBooking.gate?.name,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     return updatedBooking;
   }
 
-  async rejectBooking(id: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { id } });
-    if (!booking) throw new HttpException('Booking not found', HttpStatus.NOT_FOUND);
-
-    if (booking.status !== BookingStatus.PENDING) {
-      // Allow rejecting confirmed? Maybe.
-      // logic: if confirmed, we free up the slot?
-    }
-
-    // Free up capacity
-    await this.prisma.timeSlot.update({
-      where: { id: booking.timeSlotId },
-      data: { currentBookings: { decrement: 1 } },
-    });
-
-    await this.auditService.logAction(booking.userId, 'REJECT_BOOKING', 'BOOKING', booking.id.toString());
-
-    return this.prisma.booking.update({
-      where: { id },
-      data: { status: BookingStatus.REJECTED },
-    });
-  }
 
   async findAll() {
     return this.prisma.booking.findMany({

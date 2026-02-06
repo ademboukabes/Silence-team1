@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsInt, IsOptional, IsString, IsEmail } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBookingDto {
@@ -46,4 +46,46 @@ export class CreateBookingDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  // Driver information (required)
+  @ApiProperty({
+    example: 'Jean Dupont',
+    description: 'Full name of the driver'
+  })
+  @IsString()
+  @IsNotEmpty()
+  driverName: string;
+
+  @ApiProperty({
+    example: 'jean.dupont@transporteur.fr',
+    description: 'Driver email for QR code delivery'
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  driverEmail: string;
+
+  @ApiProperty({
+    example: '+33612345678',
+    description: 'Driver phone number'
+  })
+  @IsString()
+  @IsNotEmpty()
+  driverPhone: string;
+
+  @ApiProperty({
+    example: 'DRV-FR-2024-001',
+    description: 'Driver license or matricule number'
+  })
+  @IsString()
+  @IsNotEmpty()
+  driverMatricule: string;
+
+  @ApiProperty({
+    example: '40ft container - Electronics',
+    description: 'Description of merchandise being transported',
+    required: false
+  })
+  @IsString()
+  @IsOptional()
+  merchandiseDescription?: string;
 }

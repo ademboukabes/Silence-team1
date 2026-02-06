@@ -16,6 +16,7 @@ import { TruckModule } from './modules/truck/truck.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { AuditLogModule } from './modules/audit/audit.module';
 import { BlockchainModule } from './modules/blockchain/blockchain.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 
 @Module({
@@ -37,6 +38,7 @@ import { BlockchainModule } from './modules/blockchain/blockchain.module';
     WebsocketModule,
     AuditLogModule,
     BlockchainModule,
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [

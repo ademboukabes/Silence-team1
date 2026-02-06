@@ -86,7 +86,8 @@ export class BlockchainService implements OnModuleInit {
                 // Log to AuditService (Assuming system user ID 0 for blockchain actions)
                 await this.auditService.logAction(
                     0,
-                    'BLOCKCHAIN_NOTARIZATION_SUCCESS',
+                    'BLOCKCHAIN_NOTARIZATION',
+                    'SUCCESS',
                     'BOOKING',
                     bookingId,
                     { transactionHash: tx.hash, dataHash }
@@ -101,7 +102,8 @@ export class BlockchainService implements OnModuleInit {
             // Fallback: Notify AuditService of failure
             await this.auditService.logAction(
                 0,
-                'BLOCKCHAIN_NOTARIZATION_FAILED',
+                'BLOCKCHAIN_NOTARIZATION',
+                'FAILED',
                 'BOOKING',
                 bookingId,
                 { error: error.message, dataHash }
