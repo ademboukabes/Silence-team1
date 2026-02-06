@@ -1,0 +1,24 @@
+# Ignore .env file to prevent local configuration from being copied into Docker image
+.env
+
+# Ignore node_modules (will be installed during build)
+node_modules
+
+# Ignore dist folder (will be built during build)
+dist
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore IDE files
+.vscode
+.idea
+
+# Ignore logs
+*.log
+logs
+
+# Ignore test coverage
+coverage
+.nyc_output

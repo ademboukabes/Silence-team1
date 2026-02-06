@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Port {
+  id        Int        @id @default(autoincrement())
+  name      String
+  location  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  terminals Terminal[]
+}
+
+model Terminal {
+  id        Int      @id @default(autoincrement())
+  name      String
+  portId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  gates     Gate[]
+  port      Port     @relation(fields: [portId], references: [id])
+  operators User[]
+}
+
+model Gate {
+  id         Int        @id @default(autoincrement())
+  name       String
+  type       GateType   @default(GENERIC)
+  terminalId Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  bookings   Booking[]
+  terminal   Terminal   @relation(fields: [terminalId], references: [id])
+  timeSlots  TimeSlot[]
+}
+
+model TimeSlot {
+  id              Int       @id @default(autoincrement())
+  gateId          Int
+  startTime       DateTime
+  endTime         DateTime
+  maxCapacity     Int
+  currentBookings Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  bookings        Booking[]
+  gate            Gate      @relation(fields: [gateId], references: [id])
+}
+
+model Carrier {
+  id           Int       @id @default(autoincrement())
+  name         String
+  code         String    @unique
+  contactEmail String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  bookings     Booking[]
+  trucks       Truck[]
+  users        User[]
+}
+
+model Truck {
+  id           Int       @id @default(autoincrement())
+  licensePlate String    @unique
+  driverName   String?
+  carrierId    Int
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  bookings     Booking[]
+  carrier      Carrier   @relation(fields: [carrierId], references: [id])
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  password      String
+  role          String         @default("CARRIER")
+  terminalId    Int?
+  carrierId     Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  auditLogs     AuditLog[]
+  bookings      Booking[]
+  notifications Notification[]
+  carrier       Carrier?       @relation(fields: [carrierId], references: [id])
+  terminal      Terminal?      @relation(fields: [terminalId], references: [id])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String
+  entityType String
+  entityId   String
+  details    String?
+  userId     Int
+  timestamp  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Booking {
+  id         Int           @id @default(autoincrement())
+  bookingRef String        @unique @default(uuid())
+  qrCode     String?
+  status     BookingStatus @default(PENDING)
+  notes      String?
+  userId     Int
+  gateId     Int
+  truckId    Int
+  carrierId  Int
+  timeSlotId Int
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  carrier    Carrier       @relation(fields: [carrierId], references: [id])
+  gate       Gate          @relation(fields: [gateId], references: [id])
+  timeSlot   TimeSlot      @relation(fields: [timeSlotId], references: [id])
+  truck      Truck         @relation(fields: [truckId], references: [id])
+  user       User          @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id                 Int      @id @default(autoincrement())
+  device_type        String?
+  notification_token String?
+  userId             Int?
+  title              String
+  body               String
+  createdAt          DateTime @default(now())
+  User               User?    @relation(fields: [userId], references: [id])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CONSUMED
+}
+
+enum GateType {
+  IN
+  OUT
+  GENERIC
+}
