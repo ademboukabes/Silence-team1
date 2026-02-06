@@ -13,7 +13,6 @@ import { TerminalModule } from './modules/terminal/terminal.module';
 import { GateModule } from './modules/gate/gate.module';
 import { CarrierModule } from './modules/carrier/carrier.module';
 import { TruckModule } from './modules/truck/truck.module';
-import { AiModule } from './modules/ai/ai.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { AuditLogModule } from './modules/audit/audit.module';
 import { BlockchainModule } from './modules/blockchain/blockchain.module';
@@ -35,7 +34,6 @@ import { BlockchainModule } from './modules/blockchain/blockchain.module';
     GateModule,
     CarrierModule,
     TruckModule,
-    AiModule,
     WebsocketModule,
     AuditLogModule,
     BlockchainModule,

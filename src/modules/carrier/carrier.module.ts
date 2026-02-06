@@ -6,4 +6,4 @@ import { CarrierService } from './carrier.service';
   controllers: [CarrierController],
   providers: [CarrierService]
 })
-export class CarrierModule {}
+export class CarrierModule { }

@@ -1,14 +1,14 @@
-# 🛠️ Smart Port Logistics Hub - Technical Documentation
+# 🛠️ Hub de Logistique Portuaire - Documentation Technique
 
-This document provides a deep dive into the technical architecture, data models, and system components of the Smart Port Logistics platform.
+Cette documentation détaille l'architecture, les modèles de données et les composants système de la plateforme Smart Port Logistics.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture du Système
 
-The backend is built as a **Modular Monolith** using **NestJS**, ensuring a clean separation of business domains while maintaining simplicity in deployment.
+Le système adopte une architecture **Monolithe Modulaire** construite avec **NestJS**. Cette approche permet de découpler les domaines métier tout en simplifiant le déploiement.
 
-### High-Level Architecture
+### Vue d'Ensemble
 ```mermaid
 graph TD
     User((Utilisateurs))
@@ -17,11 +17,17 @@ graph TD
     subgraph "Backend (NestJS)"
         API[REST API Gateway]
         WS[WebSocket Gateway]
+        
+        subgraph "Intelligence & Chat"
+            AICat[AI Module - Sémantique]
+            ChatModule[Chat Module - Persistance]
+        end
+        
         Service[Business Logic Services]
         Prisma[Prisma ORM]
     end
     
-    subgraph "Storage & External"
+    subgraph "Stockage & Tierce"
         DB[(PostgreSQL)]
         BC[(Blockchain Ledger)]
     end
@@ -29,8 +35,10 @@ graph TD
     User <--> Frontend
     Frontend <--> API
     Frontend <--> WS
-    API --> Service
-    WS --> Service
+    API --> AICat
+    API --> ChatModule
+    AICat --> Service
+    ChatModule --> Prisma
     Service --> Prisma
     Prisma --> DB
     Service --> BC
@@ -38,90 +46,112 @@ graph TD
 
 ---
 
-## 📊 Data Model (Database Schema)
+## 📊 Modèle de Données (Schema)
 
-We use **Prisma** with **PostgreSQL**. The schema is designed to reflect the physical hierarchy of a port and the lifecycle of a logistics booking.
+Nous utilisons **Prisma** avec **PostgreSQL**. Le schéma reflète la hiérarchie physique d'un port et le cycle de vie d'une réservation logistique.
 
-### Entity Relationship Diagram
+### Diagramme de Relations (ERD)
 ```mermaid
 erDiagram
-    PORT ||--o{ TERMINAL : "contains"
-    TERMINAL ||--o{ GATE : "has"
-    TERMINAL ||--o{ USER : "manages"
-    GATE ||--o{ TIME_SLOT : "schedules capacity"
-    GATE ||--o{ BOOKING : "validates"
-    TIME_SLOT ||--o{ BOOKING : "reserved_in"
-    CARRIER ||--o{ TRUCK : "owns"
-    CARRIER ||--o{ USER : "employs"
-    CARRIER ||--o{ BOOKING : "requests"
-    TRUCK ||--o{ BOOKING : "assigned_to"
-    USER ||--o{ BOOKING : "creates"
-    USER ||--o{ AUDIT_LOG : "generates"
+    PORT ||--o{ TERMINAL : "contient"
+    TERMINAL ||--o{ GATE : "possède"
+    TERMINAL ||--o{ USER : "gère"
+    GATE ||--o{ TIME_SLOT : "planifie"
+    GATE ||--o{ BOOKING : "valide"
+    TIME_SLOT ||--o{ BOOKING : "est réservé"
+    CARRIER ||--o{ TRUCK : "possède"
+    CARRIER ||--o{ USER : "emploie"
+    CARRIER ||--o{ BOOKING : "demande"
+    TRUCK ||--o{ BOOKING : "assigné à"
+    USER ||--o{ BOOKING : "crée"
+    USER ||--o{ AUDIT_LOG : "génère"
+    USER ||--o{ CONVERSATION : "possède"
+    CONVERSATION ||--o{ MESSAGE : "contient"
 ```
 
-### Key Models
-- **Booking**: The core entity representing a truck's scheduled passage.
-- **TimeSlot**: Defines capacity windows (e.g., 2 hours) with a `maxCapacity` to prevent congestion.
-- **AuditLog**: Implements full traceability for security compliance.
+### Modèles Clés
+- **Booking** : L'entité centrale représentant le passage prévu d'un camion.
+- **TimeSlot** : Définit des fenêtres de capacité (ex: 2h) avec un `maxCapacity` pour prévenir la congestion.
+- **Conversation & Message** : Nouveau module de persistance pour l'historique des interactions, supportant les métadonnées d'intention (intent) pour l'IA.
 
 ---
 
-## 🔐 Security & Gateway
+## 🤖 Chatbot & Intelligence Artificielle (Backend)
 
-### API Gateway
-All incoming requests pass through the NestJS Gateway which handles:
-- **Authentication**: JWT-based (Bearer Token).
-- **Authorization**: Role-Based Access Control (RBAC) via `@Roles` decorator.
-    - `CARRIER`: Create and view own bookings.
-    - `OPERATOR`: Confirm bookings and validate gate entries.
-    - `ADMIN`: Full system access and audit logs.
-- **Rate Limiting**: Throttling enabled to prevent abuse (10 req/min).
+Le backend est structuré pour supporter une expérience de chatbot "AI-First" à travers deux piliers :
 
-### WebSocket Gateway (Real-Time)
-Uses **Socket.io** to push updates without client polling.
-- **Rooms**: Automatic joining of `user_<id>` and `role_<role>` rooms.
-- **Events**: `BOOKING_CREATED`, `CAPACITY_ALERT` (at 90% load), `GATE_PASSAGE`.
+### 1. Couche Sémantique (`AIModule`)
+Contrairement aux terminaux classiques, ce module expose des données structurées optimisées pour la consommation par des LLM (Large Language Models) :
+- **Availability Agent** : Fournit une vue simplifiée des créneaux libres sans fioritures techniques.
+- **Reference Agent** : Permet de retrouver instantanément le statut d'une réservation via langage naturel (transcrit en appels d'API sémantiques).
+
+### 2. Couche de Persistance (`ChatModule`)
+Le chatbot ne se contente pas de répondre, il "se souvient" :
+- **Lifecycle Management** : Les conversations sont persistantes et liées au profil utilisateur.
+- **Metadata Context** : Chaque message peut stocker l'intention détectée (`intent`) et les métadonnées techniques du passage, permettant d'affiner les réponses futures.
 
 ---
 
-## ⛓️ Blockchain Notary Integration
+## 🔐 Sécurité & Contrôle d'Accès
 
-To ensure **non-repudiation** and **immuability**, we integrated a blockchain layer.
+### Authentification & Autorisation
+- **JWT** : Toutes les requêtes sont sécurisées par des jetons Bearer.
+- **RBAC (Role-Based Access Control)** : 
+    - `CARRIER` : Peut créer et voir uniquement ses propres réservations et chats.
+    - `OPERATOR` : Peut valider les entrées et superviser les flux de son terminal.
+    - `ADMIN` : Accès global au système, analytics et logs d'audit.
 
-### Implementation Details
-- **Logic**: For every confirmed booking and gate passage, a SHA-256 hash of the transaction data is generated.
-- **On-Chain**: The hash is stored on a smart contract, providing a permanent digital fingerprint.
-- **Resilience**: Operates in "Fire and Forget" mode. If the blockchain network is down, the system continues in "Degraded Mode" while logging the event in the audit trail.
-
----
-
-## 🚧 Smart Gate Integration (IoT)
-
-The system includes a production-ready logic for IoT-enabled gates.
-
-### Validation Flow
-1. **Request**: Scanner sends `bookingRef` or `qrCode` to `/gates/:id/validate-entry`.
-2. **Logic**: Verified for `CONFIRMED` status, correct gate location, and valid time window.
-3. **Action**: Booking updated to `CONSUMED`, real-time alert sent to operators, and action notarized.
+### Protection contre les abus
+- **Throttling** : Limitation du nombre de requêtes à 10 par minute pour éviter les attaques par déni de service (DDoS) ou le scraping.
 
 ---
 
-## 📂 Project Structure
+## ⛓️ Intégration Blockchain
+Pour garantir la **non-répudiation**, nous avons intégré une couche Blockchain.
+- **Logique** : Pour chaque passage confirmé à une porte, un hash SHA-256 des données est généré.
+- **On-Chain** : Ce hash est stocké de manière permanente, créant une preuve infalsifiable du passage.
+
+---
+
+## 🚧 Smart Gate (IoT Ready)
+Le système inclut une logique prête pour les portes connectées (IoT).
+1. **Requête** : Le scanner envoie le `id` à `/gates/:id/validate-entry`.
+2. **Validation** : Vérification du statut, de la localisation de la porte et de la fenêtre temporelle.
+3. **Action** : Le statut passe à `CONSUMED`, une alerte WebSocket est envoyée aux opérateurs, et l'action est notarisée sur la blockchain.
+
+---
+
+## 📂 Structure du Projet
 
 ```bash
 src/
-├── guards/           # Auth, Roles, and Throttling logic
-├── interceptors/      # Response transformation & Pagination
+├── guards/           # Logique Auth, Roles et Throttling
+├── interceptors/      # Transformation des réponses & Pagination
 ├── modules/
-│   ├── ai/           # AI-agent optimized endpoints
-│   ├── audit/        # System-wide traceability
-│   ├── blockchain/   # Web3 integration layer
-│   ├── bookings/     # Booking engine logic
-│   ├── gate/         # Infrastructure & Capacity management
-│   ├── websocket/    # Real-time event broadcasting
-│   └── prisma/       # Persistence layer
-└── app.module.ts     # Main application assembly
+│   ├── ai_service/   # Recommandations & Pont vers service IA externe
+│   ├── audit/        # Traçabilité système (AuditLogController)
+│   ├── blockchain/   # Couche d'intégration Web3
+│   ├── bookings/     # Moteur de réservation
+│   ├── chat/         # Persistance chat & RBAC
+│   ├── gate/         # Gestion infrastructure & capacité
+│   ├── websocket/    # Diffusion d'événements en temps-réel
+│   └── prisma/       # Couche de persistance ORM
+└── app.module.ts     # Pivot central de l'application
 ```
 
 ---
-*Developed for MicroHack 3 - Elevating Port Logistics with Modern Engineering.*
+
+## 🐳 Environnement Docker
+
+Le projet utilise Docker Compose pour orchestrer les services :
+- **PostgreSQL (15-alpine)** : Base de données principale avec healthcheck.
+- **Backend (Node 20)** : Application NestJS compilée et exécutée en mode production.
+
+### Automatisation au démarrage :
+1. **Prisma DB Push** : Synchronisation immédiate du schéma.
+2. **Prisma Seed** : Initialisation des données métier critiques.
+3. **Optimisation** : Suppression des dépendances de développement pour une image légère.
+
+---
+*Développé pour MicroHack 3 - Optimisation Logistique par l'Ingénierie Moderne.*
+

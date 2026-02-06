@@ -42,4 +42,4 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3000
 
 # Run migrations, seed the database, and start the application
-CMD npx prisma db push --skip-generate --accept-data-loss && npx prisma db seed && node dist/main
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && npx prisma db seed && node dist/main.js"]

@@ -5,6 +5,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Global()
 @Module({
     imports: [PrismaModule],
+    controllers: [],
     providers: [AuditLogService],
     exports: [AuditLogService],
 })

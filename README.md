@@ -1,101 +1,112 @@
 # 🚢 Smart Port Logistics Hub
-### *Revolutionizing Port Traffic Orchestration*
+### *L'Orchestration Digitale au Service de la Fluidité Portuaire*
 
-> **"A high-performance digital gatekeeper designed to eliminate port congestion through AI-ready orchestration and Blockchain traceability."**
-
-![NestJS](https://img.shields.io/badge/Backend-NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![Blockchain](https://img.shields.io/badge/Web3-Notary-627EEA?style=for-the-badge&logo=ethereum&logoColor=white)
-![AI-Ready](https://img.shields.io/badge/AI-Ready-00ADD8?style=for-the-badge&logo=google-cloud&logoColor=white)
-![Real-Time](https://img.shields.io/badge/RealTime-Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)
-![Docker](https://img.shields.io/badge/Deploy-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+[![NestJS](https://img.shields.io/badge/Backend-NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Deployment-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Blockchain](https://img.shields.io/badge/Trust-Blockchain-627EEA?style=for-the-badge&logo=ethereum&logoColor=white)](https://ethereum.org/)
 
 ---
 
-## 🌟 The Vision
-Port terminals are the lungs of global trade, but they are often choked by unpredictable truck arrivals. Our solution provides a **Digital Notary and Traffic Controller** that guarantees:
-- **Zero Congestion**: Mathematical enforcement of terminal capacity.
-- **Absolute Trust**: Every movement is notarized on the Blockchain.
-- **Total Visibility**: Real-time dashboards for operators and mobile apps for carriers.
+## 🌟 Vision du Projet
+Le **Smart Port Logistics Hub** est une plateforme de gestion de trafic portuaire conçue pour résoudre les problèmes de congestion et de manque de traçabilité dans les terminaux logistiques. À travers une orchestration intelligente des rendez-vous (Booking) et une notarisation immuable sur la Blockchain, nous transformons le port en un écosystème prévisible et sécurisé.
+
+> **"Passer d'une gestion réactive à une orchestration proactive du flux de camions."**
 
 ---
 
-## ✨ Key Innovations
+## ✨ Fonctionnalités Clés
 
-### 1. 🎫 Intelligent Booking Engine
-Unlike traditional systems, our booking engine uses **Atomic Capacity Checks**. It links every booking to a specific `TimeSlot` and `Gate`, preventing trucks from even departing if the port is full.
+### 1. 🎫 Moteur de Réservation Intelligent (Booking)
+- **Gestion fine des capacités** : Définition de slots horaires avec capacité maximale par porte (Gate) pour éviter tout goulot d'étranglement.
+- **Workflow métier complet** : De la création par le transporteur (Carrier) à la validation par l'opérateur du terminal.
 
-### 2. ⛓️ Blockchain Immutable Notary
-We've implemented a **Blockchain Notary Service** that generates SHA-256 evidence for every booking and passage. This provides a "Source of Truth" that cannot be altered, even by database administrators.
+### 2. ⛓️ Notaire Digital sur Blockchain
+- **Traçabilité absolue** : Chaque confirmation de passage et chaque réservation validée génère une preuve cryptographique (Hash SHA-256) stockée sur la Blockchain.
+- **Audit immuable** : Garantie que les données de passage n'ont pas été altérées.
 
-### 3. ⚡ Real-Time Orchestration
-Using **WebSockets (Socket.io)**, terminal operators receive instant alerts:
-- 📢 **New Bookings**: Immediate awareness of incoming traffic.
-- ⚠️ **Capacity Warnings**: Visual alerts when a gate reaches 90% load.
-- 🚚 **Passage Confirmation**: Instant validation of trucks crossing the gate.
+### 3. 💬 Centre de Communication Persistant (Nouveau)
+- **Historique complet** : Sauvegarde intégrale des interactions avec les agents IA ou le support.
+- **Sécurité RBAC Granulaire** : 
+  - Les **Transporteurs** accèdent uniquement à leurs conversations.
+  - Les **Opérateurs** supervisent les échanges liés à leur terminal.
+  - Les **Admins** disposent d'une vue d'ensemble sur l'ensemble du hub.
 
-### 4. 🤖 AI-Agent Ready
-The platform exposes **semantic endpoints** specifically designed for AI agents. They can query "Slot Availability" and "Historical Flux" in formats optimized for LLM processing.
+### 4. 🤖 Interfaces optimisées pour l'IA
+- **Endpoints Sémantiques** : API conçues pour être consommées par des agents intelligents, facilitant l'analyse prédictive des flux et la recherche de slots disponibles.
+
+### 5. ⚡ Notifications & Événements Temps-Réel
+- Intégration de **WebSockets** pour des alertes instantanées sur les arrivées de camions et les alertes de saturation de capacité.
 
 ---
 
-## 🚀 Getting Started (1-Click Start)
+## 🏗️ Architecture Technique
 
-The entire ecosystem (PostgreSQL + NestJS API) is fully containerized. **No local setup is required** besides Docker.
+Le projet repose sur une architecture **Monolithe Modulaire** robuste :
+- **Framework** : NestJS (Node.js) pour une structure maintenable et scalable.
+- **Persistance** : Prisma ORM couplé à PostgreSQL.
+- **Temps-Réel** : Socket.io pour la communication bidirectionnelle.
+- **Web3** : Ethers.js pour l'interaction avec les Smart Contracts.
 
+---
+
+## 🚀 Installation & Lancement (Docker-First)
+
+> [!NOTE]
+> Cette branche `issam-test` contient les dernières corrections de stabilité, notamment la correction du démarrage de l'application NestJS.
+
+Plus besoin de configurer localement Node.js ou PostgreSQL. Le projet est entièrement conteneurisé.
+
+
+### 1. Prérequis
+- [Docker](https://www.docker.com/get-started) & [Docker Compose](https://docs.docker.com/compose/install/)
+
+### 2. Lancement Rapide
 ```bash
-# 1. Clone the repository
+# Cloner le projet
 git clone https://github.com/ademboukabes/MicroHack-3-.git
+cd MicroHack-3-
 
-# 2. Launch EVERYTHING with a single command
+# Tout démarrer en une seule commande
 docker compose up --build
 ```
 
-### ⚡ What happens when you run this?
-- **PostgreSQL Container**: Boots up with persistent storage.
-- **NestJS Backend**: Compiles and waits for the DB to be healthy.
-- **Auto-Migration**: Database schema is automatically synchronized.
-- **Auto-Seeding**: **The system automatically injects demo data** (Ports, Operators, Carriers, and Slots) so you can start testing immediately!
-
-> **Access Points**:
-> - **Interactive API (Swagger)**: `http://localhost:3000/api`
-> - **Real-time Gateway**: `ws://localhost:3000`
+### 3. Ce que Docker fait pour vous :
+1. Démarre une instance **PostgreSQL** saine.
+2. Compile le backend **NestJS**.
+3. **Automigrate** : Synchronise le schéma de la base de données (incluant les nouvelles tables de Chat).
+4. **Autoseed** : Injecte automatiquement des données de test (Ports, Terminaux, Transporteurs, Slots) pour que vous puissiez tester immédiatement.
+5. **Runtime Support** : Configure `tsconfig-paths` pour supporter les imports absolus en production.
 
 ---
 
-## 🛠️ Performance & Scalability
-- **Multi-Stage Docker Builds**: Optimized for minimal production footprints.
-- **Hybrid Storage**: PostgreSQL for operational speed + Blockchain for legal audit.
-- **Strict Typing**: Full TypeScript coverage and `class-validator` for impenetrable API safety.
+## 📚 Points d'accès API
+- **Swagger UI (Documentation Interactive)** : `http://localhost:3000/docs`
+- **Port d'écoute API** : `3000`
+- **Socket Gateway** : `ws://localhost:3000`
 
 ---
 
-## 📚 Documentation
-- **[Technical Deep Dive](file:///c:/Users/TUF/Documents/MicroHack-3-/TECH_DOCS.md)** - Architecture, ERD, and Module details.
-- **[API Specs](http://localhost:3000/api)** - Live interactive Swagger documentation.
+## 🛠️ Tests & Démonstration
+Pour vérifier que tout fonctionne, utilisez nos scripts de démonstration ou notre suite de vérification automatisée :
 
----
-
-## 🧪 Verification & Demo
-
-We provide a specialized suite of scripts to validate the platform's features, now organized in the `scripts/` directory.
-
-### Quick Test Execution
+### 1. Suite de Vérification Automatisée (Recommandé)
+Ce script réinitialise la base de données, injecte les données de test, redémarre les services et valide l'intégralité du flux métier (IA, Blockchain, Audit).
 ```bash
-# Complete system workflow demo (recommended)
-node scripts/demo.js
+.\scripts\verify-project.bat
+```
 
-# Individual feature tests
-node scripts/test_api.js              # Auth & Core Logic
-node scripts/test_gate_control.js     # IoT Gate Validation
-node scripts/test_websocket.js        # Real-time Events
-node scripts/test_blockchain.ts       # Blockchain Fallback (ts-node required)
+### 2. Démo du flux métier seul
+```bash
+node scripts/demo.js
 ```
 
 ---
 
-## 🏆 Developed for MicroHack 3
-**Goal**: Elevating Algerian Logistics through Innovation.
-**Team**: ademboukabes & Co.
+## 🏆 Équipe & Contexte
+Développé dans le cadre du **MicroHack 3**. 
+**Objectif** : Moderniser la logistique portuaire algérienne par l'innovation technologique.
 
 ---
-*Immutable. Efficient. Real-time. This is the future of Port Logistics.*
+*Fiable. Immuable. Temps-Réel. Bienvenue dans le futur de la logistique.*

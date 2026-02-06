@@ -104,8 +104,7 @@ model AuditLog {
 }
 
 model Booking {
-  id         Int           @id @default(autoincrement())
-  bookingRef String        @unique @default(uuid())
+  id         String        @id @default(uuid())
   qrCode     String?
   status     BookingStatus @default(PENDING)
   notes      String?

@@ -49,15 +49,15 @@ export class GateService {
 
     async validateEntry(gateId: number, dto: ValidateEntryDto) {
         // 1. Validate input
-        if (!dto.bookingRef && !dto.qrCode) {
-            throw new BadRequestException('Either bookingRef or qrCode must be provided');
+        if (!dto.bookingId && !dto.qrCode) {
+            throw new BadRequestException('Either bookingId or qrCode must be provided');
         }
 
         // 2. Find booking
         const booking = await this.prisma.booking.findFirst({
             where: {
                 OR: [
-                    { bookingRef: dto.bookingRef },
+                    { id: dto.bookingId },
                     { qrCode: dto.qrCode },
                 ],
             },
@@ -105,7 +105,7 @@ export class GateService {
         this.wsService.notifyOperators('ALL', 'GATE_PASSAGE', {
             gateId: booking.gateId,
             gateName: booking.gate.name,
-            bookingRef: booking.bookingRef,
+            bookingRef: booking.id,
             truckPlate: booking.truck.licensePlate,
             timestamp: new Date(),
             status: 'GRANTED',
@@ -113,7 +113,7 @@ export class GateService {
 
         // 8.5 Notarize on Blockchain
         this.blockchainService.notarizeBooking(`ENTRY_${updatedBooking.id}`, {
-            bookingRef: updatedBooking.bookingRef,
+            bookingRef: updatedBooking.id,
             truck: updatedBooking.truck.licensePlate,
             gate: updatedBooking.gate.name,
             passageTime: new Date().toISOString(),
@@ -136,7 +136,7 @@ export class GateService {
             success: true,
             message: 'Entry granted',
             booking: {
-                bookingRef: updatedBooking.bookingRef,
+                bookingRef: updatedBooking.id,
                 truck: updatedBooking.truck.licensePlate,
                 gate: updatedBooking.gate.name,
                 status: updatedBooking.status,

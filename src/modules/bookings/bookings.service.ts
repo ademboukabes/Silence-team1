@@ -86,7 +86,7 @@ export class BookingsService {
     }
   }
 
-  async confirmBooking(id: number) {
+  async confirmBooking(id: string) {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new HttpException('Booking not found', HttpStatus.NOT_FOUND);
 
@@ -95,7 +95,7 @@ export class BookingsService {
     }
 
     // Generate QR Code (Mock URL)
-    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.bookingRef}`;
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.id}`;
 
     await this.auditService.logAction(booking.userId, 'CONFIRM_BOOKING', 'BOOKING', booking.id.toString());
 
@@ -111,8 +111,8 @@ export class BookingsService {
     });
 
     // Notarize on Blockchain
-    this.blockchainService.notarizeBooking(updatedBooking.id.toString(), {
-      bookingRef: updatedBooking.bookingRef,
+    this.blockchainService.notarizeBooking(updatedBooking.id, {
+      bookingRef: updatedBooking.id,
       carrier: updatedBooking.carrier?.name,
       truck: updatedBooking.truck?.licensePlate,
       gate: updatedBooking.gate?.name,
@@ -124,7 +124,7 @@ export class BookingsService {
     return updatedBooking;
   }
 
-  async rejectBooking(id: number) {
+  async rejectBooking(id: string) {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new HttpException('Booking not found', HttpStatus.NOT_FOUND);
 
@@ -153,7 +153,7 @@ export class BookingsService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     return this.prisma.booking.findUnique({
       where: { id },
       include: { truck: true, gate: true, carrier: true, timeSlot: true },

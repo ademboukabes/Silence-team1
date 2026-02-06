@@ -6,4 +6,4 @@ import { TerminalService } from './terminal.service';
   controllers: [TerminalController],
   providers: [TerminalService]
 })
-export class TerminalModule {}
+export class TerminalModule { }

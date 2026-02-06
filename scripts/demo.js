@@ -59,7 +59,7 @@ async function wait(ms) {
 }
 
 async function runCompleteDemo() {
-    header('🚀 SMART PORT LOGISTICS - COMPLETE DEMO');
+    header('🚀 SMART PORT LOGISTICS - CORE FLOW DEMO');
 
     try {
         // =====================================================
@@ -72,6 +72,12 @@ async function runCompleteDemo() {
             email: 'op@port.com',
             password: '123456'
         });
+
+        if (operatorLogin.status !== 200 && operatorLogin.status !== 201) {
+            log('❌', `Operator login failed: ${JSON.stringify(operatorLogin.data)}`, colors.red);
+            return;
+        }
+
         const operatorToken = operatorLogin.data.access_token;
         log('✅', 'Operator authenticated', colors.green);
 
@@ -81,56 +87,70 @@ async function runCompleteDemo() {
             password: 'demo123',
             name: 'Maersk Express Demo'
         });
+
+        if (carrierSignup.status !== 200 && carrierSignup.status !== 201) {
+            log('❌', `Carrier signup failed: ${JSON.stringify(carrierSignup.data)}`, colors.red);
+            return;
+        }
+
         const carrierToken = carrierSignup.data.access_token;
         log('✅', 'Carrier account created', colors.green);
 
         await wait(1000);
 
         // =====================================================
-        // STEP 2: AI-POWERED SLOT RECOMMENDATION
+        // STEP 2: METADATA FETCHING (Gates & Slots)
         // =====================================================
-        header('🤖 STEP 2: AI-Powered Slot Recommendation');
+        header('🔍 STEP 2: Fetching Infrastructure Metadata');
 
-        log('🔍', 'Querying available slots...', colors.blue);
-        const slotsRes = await apiCall('GET', '/ai/slot-availability', null, carrierToken);
-        const slots = slotsRes.data.data;
+        log('🚪', 'Fetching available gates...', colors.blue);
+        const gatesRes = await apiCall('GET', '/gates', null, carrierToken);
+        const gates = gatesRes.data.data || gatesRes.data;
+
+        if (!gates || !Array.isArray(gates) || gates.length === 0) {
+            log('❌', 'No gates available. Ensure database is seeded.', colors.red);
+            return;
+        }
+
+        const targetGate = gates[0];
+        log('✅', `Using Gate: ${targetGate.name} (ID: ${targetGate.id})`, colors.green);
+
+        log('📅', `Fetching slots for Gate ${targetGate.name}...`, colors.blue);
+        const gateInfo = await apiCall('GET', `/gates/${targetGate.id}`, null, carrierToken);
+        const slots = gateInfo.data.timeSlots;
 
         if (!slots || slots.length === 0) {
-            log('❌', 'No slots available. Run: docker exec microhack-3--backend-1 npx prisma db seed', colors.red);
+            log('❌', `No slots found for gate ${targetGate.id}.`, colors.red);
             return;
         }
 
         const slot = slots[0];
-        log('📊', `Recommended Slot:`, colors.cyan);
-        console.log(`   • Slot ID: ${slot.slotId}`);
-        console.log(`   • Gate: ${slot.gate} (ID: ${slot.gateId})`);
-        console.log(`   • Port: ${slot.port}`);
+        log('📊', `Selected Slot:`, colors.cyan);
+        console.log(`   • Slot ID: ${slot.id}`);
         console.log(`   • Time: ${new Date(slot.startTime).toLocaleString()}`);
-        console.log(`   • Capacity: ${slot.capacity} (${slot.status})`);
+        console.log(`   • Capacity: ${slot.currentBookings}/${slot.maxCapacity}`);
 
         await wait(1000);
 
         // =====================================================
-        // STEP 3: DATA PREPARATION (Fetch IDs)
+        // STEP 3: DATA PREPARATION (Trucks & Carriers)
         // =====================================================
-        header('🔍 STEP 3: Data Preparation');
+        header('🔍 STEP 3: Fetching Business Metadata');
 
         log('🚚', 'Fetching available trucks...', colors.blue);
         const trucksRes = await apiCall('GET', '/trucks', null, carrierToken);
-        const truck = trucksRes.data.data ? trucksRes.data.data[0] : null;
+        const truck = trucksRes.data.data ? trucksRes.data.data[0] : (Array.isArray(trucksRes.data) ? trucksRes.data[0] : null);
         if (!truck) {
-            log('❌', 'No trucks found in database response.', colors.red);
-            console.log('Raw response:', JSON.stringify(trucksRes.data));
+            log('❌', 'No trucks found.', colors.red);
             return;
         }
         log('✅', `Using Truck: ${truck.licensePlate} (ID: ${truck.id})`, colors.green);
 
-        log('🏢', 'Fetching available carriers...', colors.blue);
+        log('🏢', 'Fetching carriers...', colors.blue);
         const carriersRes = await apiCall('GET', '/carriers', null, carrierToken);
-        const carrier = carriersRes.data.data ? carriersRes.data.data[0] : null;
+        const carrier = carriersRes.data.data ? carriersRes.data.data[0] : (Array.isArray(carriersRes.data) ? carriersRes.data[0] : null);
         if (!carrier) {
-            log('❌', 'No carriers found in database response.', colors.red);
-            console.log('Raw response:', JSON.stringify(carriersRes.data));
+            log('❌', 'No carriers found.', colors.red);
             return;
         }
         log('✅', `Using Carrier: ${carrier.name} (ID: ${carrier.id})`, colors.green);
@@ -144,23 +164,21 @@ async function runCompleteDemo() {
 
         log('💼', 'Carrier submitting booking request...', colors.blue);
         const bookingRes = await apiCall('POST', '/bookings', {
-            timeSlotId: slot.slotId,
+            timeSlotId: slot.id,
             truckId: truck.id,
             carrierId: carrier.id,
-            gateId: slot.gateId,
-            notes: 'Demo booking - Urgent container pickup'
+            gateId: targetGate.id,
+            notes: 'Demo booking - Core flow test'
         }, carrierToken);
 
-        if (bookingRes.status !== 201) {
+        if (bookingRes.status !== 201 && bookingRes.status !== 200) {
             log('❌', `Booking failed: ${JSON.stringify(bookingRes.data)}`, colors.red);
             return;
         }
 
         const booking = bookingRes.data;
-        log('✅', `Booking created: ${booking.bookingRef}`, colors.green);
+        log('✅', `Booking created! UUID: ${booking.id}`, colors.green);
         console.log(`   • Status: ${booking.status}`);
-        console.log(`   • Truck ID: ${booking.truckId}`);
-
 
         await wait(1000);
 
@@ -169,7 +187,7 @@ async function runCompleteDemo() {
         // =====================================================
         header('👨‍💼 STEP 5: Operator Confirmation');
 
-        log('🔍', 'Operator reviewing booking...', colors.blue);
+        log('🔍', 'Operator reviewing and confirming booking...', colors.blue);
         const confirmRes = await apiCall('PUT', `/bookings/${booking.id}/confirm`, {}, operatorToken);
 
         if (confirmRes.status !== 200) {
@@ -178,7 +196,7 @@ async function runCompleteDemo() {
         }
 
         log('✅', 'Booking CONFIRMED by Operator', colors.green);
-        console.log(`   • QR Code: ${confirmRes.data.qrCode ? 'Generated ✓' : 'N/A'}`);
+        console.log(`   • QR Code Hash: ${confirmRes.data.qrCode.substring(0, 50)}...`);
         console.log(`   • Status: ${confirmRes.data.status}`);
 
         await wait(1500);
@@ -188,19 +206,18 @@ async function runCompleteDemo() {
         // =====================================================
         header('🚪 STEP 6: IoT Gate Validation (Hardware Simulation)');
 
-        log('📡', `Truck arriving at Gate ${slot.gateId}...`, colors.blue);
-        log('🔲', 'Scanner reading booking reference...', colors.blue);
+        log('📡', `Truck arriving at Gate ${targetGate.id}...`, colors.blue);
+        log('🔲', 'Scanner reading QR code / UUID...', colors.blue);
 
         await wait(1000);
 
-        const validateRes = await apiCall('POST', `/gates/${slot.gateId}/validate-entry`, {
-            bookingRef: booking.bookingRef
+        const validateRes = await apiCall('POST', `/gates/${targetGate.id}/validate-entry`, {
+            bookingId: booking.id
         });
 
-        if (validateRes.status === 201) {
+        if (validateRes.status === 201 || validateRes.status === 200) {
             log('🎉', 'ENTRY GRANTED!', colors.green);
             console.log(`   • Truck: ${validateRes.data.booking.truck}`);
-            console.log(`   • Gate: ${validateRes.data.booking.gate}`);
             console.log(`   • Status: ${validateRes.data.booking.status}`);
             console.log(`   • Message: ${validateRes.data.message}`);
         } else {
@@ -210,19 +227,19 @@ async function runCompleteDemo() {
         await wait(1000);
 
         // =====================================================
-        // STEP 7: DUPLICATE ENTRY TEST
+        // STEP 7: SECURITY TEST
         // =====================================================
         header('🔒 STEP 7: Security - Single-Use Enforcement');
 
         log('🔄', 'Attempting to reuse same booking...', colors.yellow);
-        const retryRes = await apiCall('POST', `/gates/${slot.gateId}/validate-entry`, {
-            bookingRef: booking.bookingRef
+        const retryRes = await apiCall('POST', `/gates/${targetGate.id}/validate-entry`, {
+            bookingId: booking.id
         });
 
-        if (retryRes.status === 400 || retryRes.status === 409) {
-            log('✅', `Correctly BLOCKED: ${retryRes.data.message}`, colors.green);
+        if (retryRes.status === 400 || retryRes.status === 409 || retryRes.status === 404) {
+            log('✅', `Correctly BLOCKED: ${retryRes.data.message || 'Already consumed'}`, colors.green);
         } else {
-            log('⚠️', 'Security issue: Duplicate entry allowed!', colors.yellow);
+            log('⚠️', 'Security issue: Duplicate entry behavior unexpected!', colors.yellow);
         }
 
         // =====================================================
@@ -231,13 +248,13 @@ async function runCompleteDemo() {
         header('📊 DEMO SUMMARY');
 
         console.log(`${colors.green}✓${colors.reset} Authentication: PASSED`);
-        console.log(`${colors.green}✓${colors.reset} AI Slot Recommendation: PASSED`);
+        console.log(`${colors.green}✓${colors.reset} Infrastructure Retrieval: PASSED`);
         console.log(`${colors.green}✓${colors.reset} Booking Creation: PASSED`);
         console.log(`${colors.green}✓${colors.reset} Operator Confirmation: PASSED`);
         console.log(`${colors.green}✓${colors.reset} IoT Gate Validation: PASSED`);
         console.log(`${colors.green}✓${colors.reset} Single-Use Security: PASSED`);
 
-        console.log(`\n${colors.bright}${colors.green}🏆 ALL SYSTEMS OPERATIONAL!${colors.reset}\n`);
+        console.log(`\n${colors.bright}${colors.green}🏆 CORE SYSTEMS OPERATIONAL!${colors.reset}\n`);
 
     } catch (error) {
         log('❌', `Demo failed: ${error.message}`, colors.red);

@@ -6,4 +6,4 @@ import { TruckService } from './truck.service';
   controllers: [TruckController],
   providers: [TruckService]
 })
-export class TruckModule {}
+export class TruckModule { }

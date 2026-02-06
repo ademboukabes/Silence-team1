@@ -19,13 +19,13 @@ export class BookingsController {
 
   @Put(':id/confirm')
 
-  confirm(@Param('id', ParseIntPipe) id: number) {
+  confirm(@Param('id') id: string) {
     return this.bookingsService.confirmBooking(id);
   }
 
   @Put(':id/reject')
 
-  reject(@Param('id', ParseIntPipe) id: number) {
+  reject(@Param('id') id: string) {
     return this.bookingsService.rejectBooking(id);
   }
 
@@ -36,7 +36,7 @@ export class BookingsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.bookingsService.findOne(id);
   }
 }

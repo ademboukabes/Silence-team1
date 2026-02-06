@@ -7,7 +7,7 @@ async function main() {
     console.log('Seeding data...');
 
     // Cleanup
-    // await prisma.auditLog.deleteMany(); // Commented out to debug
+    await prisma.auditLog.deleteMany();
     await prisma.notification.deleteMany();
     await prisma.booking.deleteMany();
     await prisma.timeSlot.deleteMany();
@@ -34,7 +34,7 @@ async function main() {
                             name: 'Op Jane',
                             email: 'op@port.com',
                             password: await bcrypt.hash('123456', 10),
-                            role: 'OPERATOR',
+                            role: 'TERMINAL_OPERATOR',
                         }
                     },
                     gates: {
@@ -106,9 +106,7 @@ async function main() {
             gateId: gate.id,
             truckId: truck.id,
             timeSlotId: slot.id,
-            bookingRef: 'BOOK-DEMO-001',
-            status: BookingStatus.PENDING,
-            notes: 'Demo booking'
+            notes: 'Demo booking',
         }
     });
 
@@ -118,7 +116,7 @@ async function main() {
         data: { currentBookings: { increment: 1 } }
     });
 
-    console.log('Created Booking:', booking.bookingRef);
+    console.log('Created Booking:', booking.id);
 }
 
 main()
