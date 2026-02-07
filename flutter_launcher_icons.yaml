@@ -1,8 +1,14 @@
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/mon_logo.png"
+  min_sdk_android: 21
+
 flutter_native_splash:
   color: "#FFFFFF"              # La couleur de fond de ton écran
-  image: assets/images/logo.png # Ton logo unique
+  image: assets/images/mon_logo.png # Ton logo unique
   # Pas besoin de foreground ici
   
   android_12:
-    image: assets/images/logo.png
+    image: assets/images/mon_logo.png
     color: "#FFFFFF"

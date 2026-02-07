@@ -29,12 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey, // On lie la clé au Scaffold
-      backgroundColor: const Color.fromARGB(
-        255,
-        227,
-        225,
-        225,
-      ), // Votre couleur de fond sombre
+      backgroundColor: Colors.white,
       // --- LE DRAWER (SIDE BAR) ---
       drawer: Drawer(
         backgroundColor: const Color(0xFF274B66),
@@ -131,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 26.sp,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: Colors.black,
                     fontFamily: 'Inter',
                   ),
                 );
