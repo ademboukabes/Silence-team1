@@ -1,6 +1,8 @@
-class ChatMsg {
-  final bool fromUser;
+class ChatMessage {
   final String text;
+  final bool isUser;
+  final DateTime time;
 
-  ChatMsg({required this.fromUser, required this.text});
+  ChatMessage({required this.text, required this.isUser, DateTime? time})
+    : time = time ?? DateTime.now();
 }

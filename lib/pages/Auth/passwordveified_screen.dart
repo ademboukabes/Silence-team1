@@ -2,133 +2,169 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:listenlit/controllers/auth_controller.dart';
 import 'package:listenlit/general_widgets/background_imagecontainer.dart';
-import 'package:listenlit/general_widgets/passwordtextfield.dart';
 import 'package:listenlit/general_widgets/primarybutton.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
-import 'package:listenlit/utils/colors.dart';
-import 'package:listenlit/utils/images_paths.dart';
 
 class PasswordVeifiedScreen extends StatelessWidget {
-  PasswordVeifiedScreen({super.key});
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
+  PasswordVeifiedScreen({super.key, required this.email, required this.code});
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+  final String email;
+  final String code;
+  final AuthController authController = Get.find<AuthController>();
+
   @override
   Widget build(BuildContext context) {
-    return BackgroundImageContainer(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(children: [
-            Padding(
-              padding: EdgeInsets.only(
-                  top: 235.5.h, right: 144.w, bottom: 15.h, left: 10.w),
-              child: Text(
-                'Set Password',
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: 24.h),
+          child: Column(
+            children: [
+              SizedBox(height: 70.h),
+
+              Text(
+                'APOS',
                 style: TextStyle(
-                  fontSize: 32.sp,
-                  color: AppColor.kLightAccentColor,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w900,
+                  color: cs.onSurface,
                   fontFamily: 'Inter',
                 ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Container(
-                width: 358.w,
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 24.h),
+
+              SizedBox(height: 16.h),
+
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 22.w),
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 24.h),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: AppColor.kSamiDarkColor.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(26.r),
+                  color: Theme.of(context).cardTheme.color ?? cs.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColor.kSamiDarkColor.withOpacity(0.5),
-                      blurRadius: 10, // Adjust the blur radius
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: Container(
-                  color: Colors.transparent,
-                  child: Column(
-                    children: [
-                      Column(
-                        children: [
-                          SvgPicture.asset(AppImagePath.kSuccessIcon),
-                          SizedBox(
-                            height: 8.h,
+                child: Column(
+                  children: [
+                    Text(
+                      'Set Password',
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    _softField(
+                      hint: 'New password',
+                      controller: passwordController,
+                      obscureText: true,
+                    ),
+
+                    SizedBox(height: 12.h),
+
+                    _softField(
+                      hint: 'Confirm password',
+                      controller: confirmPasswordController,
+                      obscureText: true,
+                    ),
+
+                    SizedBox(height: 14.h),
+
+                    PrimaryButton(
+                      onTap: _handleReset,
+                      borderRadius: 18.r,
+                      fontSize: 14.sp,
+                      height: 42.h,
+                      width: 220.w,
+                      text: 'Set Password',
+                      textColor: cs.onPrimary,
+                      bgColor: cs.primary,
+                    ),
+
+                    Obx(() {
+                      final err = authController.resetError.value;
+                      if (err == null || err.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: EdgeInsets.only(top: 8.h),
+                        child: Text(
+                          err,
+                          style: TextStyle(
+                            color: cs.error,
+                            fontSize: 12.sp,
+                            fontFamily: 'Inter',
                           ),
-                          Text(
-                            'Code verified',
-                            style: TextStyle(
-                                color: AppColor.kSamiAccentColor,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 16.sp),
-                          )
-                        ],
-                      ),
-                      SizedBox(
-                        height: 24.h,
-                      ),
-                      PasswordTextField(
-                        hintText: 'Enter new password',
-                        controller: passwordController,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r)),
-                        width: 326.w,
-                        height: 48.h,
-                      ),
-                      SizedBox(
-                        height: 16.h,
-                      ),
-                      PasswordTextField(
-                        hintText: 'Re-type new password',
-                        controller: confirmPasswordController,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r)),
-                        width: 326.w,
-                        height: 48.h,
-                      ),
-                      SizedBox(
-                        height: 8.h,
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            'At-least 8 characters',
-                            style: TextStyle(
-                                color: AppColor.kSamiAccentColor,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12.sp),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 16.h,
-                      ),
-                      PrimaryButton(
-                        onTap: () {
-                          Get.off(() => const LandingScreen());
-                        },
-                        borderRadius: 8.r,
-                        fontSize: 14.sp,
-                        height: 48.h,
-                        width: 326.w,
-                        text: 'Set Password',
-                        textColor: AppColor.kWhiteColor,
-                        bgColor: AppColor.kPrimary,
-                      ),
-                    ],
-                  ),
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               ),
-            )
-          ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleReset() async {
+    final pass = passwordController.text;
+    final confirm = confirmPasswordController.text;
+    if (pass.isEmpty || confirm.isEmpty) {
+      authController.resetError.value = 'Please fill all fields.';
+      return;
+    }
+    if (pass != confirm) {
+      authController.resetError.value = 'Passwords do not match.';
+      return;
+    }
+    final ok = await authController.resetPassword(
+      email: email,
+      newPassword: pass,
+      code: code,
+    );
+    if (ok) {
+      Get.off(() => const LandingScreen());
+    }
+  }
+
+  Widget _softField({
+    required String hint,
+    required TextEditingController controller,
+    bool obscureText = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      style: const TextStyle(color: Color(0xFF1C3D5A)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          color: Color(0xFF3C5E78),
+          fontWeight: FontWeight.w600,
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.65),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
         ),
       ),
     );

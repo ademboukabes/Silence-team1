@@ -2,148 +2,139 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:listenlit/controllers/auth_controller.dart';
 import 'package:listenlit/general_widgets/background_imagecontainer.dart';
 import 'package:listenlit/general_widgets/primarybutton.dart';
-import 'package:listenlit/general_widgets/primarytextfield.dart';
-import 'package:listenlit/pages/Auth/widgets/custom_richtext.dart';
-import 'package:listenlit/pages/Auth/signup_screen.dart';
-import 'package:listenlit/pages/Auth/verifycode_screen.dart';
-import 'package:listenlit/utils/colors.dart';
-import 'package:listenlit/utils/icons_path.dart';
 
 class ForgetPasswordScreen extends StatelessWidget {
   ForgetPasswordScreen({super.key});
-  TextEditingController forgetPasswordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final AuthController authController = Get.find<AuthController>();
+
   @override
   Widget build(BuildContext context) {
-    return BackgroundImageContainer(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          title: GestureDetector(
-            onTap: () {
-              Get.back();
-            },
-            child: Padding(
-              padding: EdgeInsets.only(top: 18.h, bottom: 18.h, left: 16.w),
-              child: Row(
-                children: [
-                  SvgPicture.asset(
-                    AppIcons.kBackIcon,
-                  ),
-                  SizedBox(
-                    width: 8.w,
-                  ),
-                  Text(
-                    'Back to Log in',
-                    style: TextStyle(
-                        color: AppColor.kLightAccentColor,
-                        fontSize: 16.sp,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500),
-                  )
-                ],
-              ),
-            ),
-          ),
-        ),
-        body: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(children: [
-            Padding(
-              padding: EdgeInsets.only(
-                  top: 148.5.h, right: 68.w, bottom: 15.h, left: 10.w),
-              child: Text(
-                'Recover Password',
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: 24.h),
+          child: Column(
+            children: [
+              SizedBox(height: 70.h),
+
+              Text(
+                'APOS',
                 style: TextStyle(
-                  fontSize: 32.sp,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w900,
+                  color: cs.onSurface,
                   fontFamily: 'Inter',
-                  color: AppColor.kLightAccentColor,
                 ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Container(
-                width: 358.w,
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 24.h),
+
+              SizedBox(height: 16.h),
+
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 22.w),
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 24.h),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: AppColor.kSamiDarkColor.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(26.r),
+
+                  // au lieu du gradient hardcodé, on utilise une card “theme”
+                  color: Theme.of(context).cardTheme.color ?? cs.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColor.kSamiDarkColor.withOpacity(0.5),
-                      blurRadius: 10, // Adjust the blur radius
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: Container(
-                  color: Colors.transparent,
-                  child: Column(
-                    children: [
-                      Text(
-                        'Forgot your password? Don’t worry, enter your email to reset your current password.',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'Inter',
-                          color: AppColor.kLightAccentColor,
+                child: Column(
+                  children: [
+                    Text(
+                      'Recover Password',
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+
+                    _softField(hint: 'Email', controller: emailController),
+
+                    SizedBox(height: 14.h),
+
+                    PrimaryButton(
+                      onTap: _handleSubmit,
+                      borderRadius: 18.r,
+                      fontSize: 14.sp,
+                      height: 42.h,
+                      width: 220.w,
+                      text: 'Submit',
+                      textColor: cs.onPrimary,
+                      bgColor: cs.primary,
+                    ),
+
+                    Obx(() {
+                      final err = authController.resetError.value;
+                      if (err == null || err.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: EdgeInsets.only(top: 8.h),
+                        child: Text(
+                          err,
+                          style: TextStyle(
+                            color: cs.error,
+                            fontSize: 12.sp,
+                            fontFamily: 'Inter',
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        height: 24.h,
-                      ),
-                      PrimaryTextFormField(
-                        hintText: 'Email',
-                        controller: forgetPasswordController,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r)),
-                        width: 326.w,
-                        height: 48.h,
-                      ),
-                      SizedBox(
-                        height: 16.h,
-                      ),
-                      PrimaryButton(
-                        onTap: () {
-                          Get.to(() => VerifyCodeScreen());
-                        },
-                        borderRadius: 8.r,
-                        fontSize: 14.sp,
-                        height: 48.h,
-                        width: 326.w,
-                        text: 'Submit',
-                        textColor: AppColor.kWhiteColor,
-                        bgColor: AppColor.kPrimary,
-                      ),
-                      SizedBox(
-                        height: 24.h,
-                      ),
-                      CustomRichText(
-                        subtitle: ' Sign up ',
-                        title: 'Don’t have an account?',
-                        subtitleTextStyle: TextStyle(
-                          color: AppColor.kPrimary,
-                          fontSize: 14.sp,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                        ),
-                        onTab: () {
-                          Get.off(() => SignUpScreen());
-                        },
-                      )
-                    ],
-                  ),
+                      );
+                    }),
+                  ],
                 ),
               ),
-            )
-          ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleSubmit() async {
+    final email = emailController.text.trim();
+    if (email.isEmpty) {
+      authController.resetError.value = 'Please enter your email.';
+      return;
+    }
+    await authController.forgotPassword(email);
+  }
+
+  Widget _softField({
+    required String hint,
+    required TextEditingController controller,
+  }) {
+    return TextField(
+      controller: controller,
+      style: const TextStyle(color: Color(0xFF1C3D5A)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          color: Color(0xFF3C5E78),
+          fontWeight: FontWeight.w600,
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.65),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
         ),
       ),
     );

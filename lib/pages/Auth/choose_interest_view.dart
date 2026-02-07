@@ -11,6 +11,7 @@ import 'package:listenlit/pages/Auth/widgets/topleaveltext.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
 import 'package:listenlit/utils/colors.dart';
 import 'package:oktoast/oktoast.dart';
+import 'package:listenlit/controllers/auth_controller.dart';
 
 List<String> selectGenres = [];
 
@@ -24,6 +25,7 @@ class ChooseInterestScreen extends StatefulWidget {
 class _ChooseInterestScreenState extends State<ChooseInterestScreen> {
   bool showMore = false;
   int displayedItemCount = 17; // Change this value as per your requirements
+  final AuthController authController = Get.find<AuthController>();
   void showAll() {
     displayedItemCount = showMore ? Genres.values.length : 17;
   }
@@ -112,7 +114,7 @@ class _ChooseInterestScreenState extends State<ChooseInterestScreen> {
                             textStyle: TextStyle(fontSize: 14.0.sp),
                           );
                         } else {
-                          Get.off(() => const LandingScreen());
+                          _submitInterests();
                         }
                       },
                       borderRadius: 8.r,
@@ -135,5 +137,9 @@ class _ChooseInterestScreenState extends State<ChooseInterestScreen> {
         ]),
       ),
     );
+  }
+
+  Future<void> _submitInterests() async {
+    Get.off(() => const LandingScreen());
   }
 }

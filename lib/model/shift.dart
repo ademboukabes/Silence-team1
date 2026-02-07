@@ -60,6 +60,38 @@ class Shift {
     required this.busNumber,
   });
 
+  factory Shift.fromJson(Map<String, dynamic> json) {
+    return Shift(
+      shiftId: (json['id'] ?? json['shiftId'] ?? '').toString(),
+      depot: (json['depot'] ?? json['terminal'] ?? '').toString(),
+      bay: (json['bay'] ?? json['gate'] ?? '').toString(),
+      line: (json['line'] ?? '').toString(),
+      route: (json['route'] ?? '').toString(),
+      start: DateTime.tryParse(json['start']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      end: DateTime.tryParse(json['end']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      status: _statusFrom(json['status']),
+      operator: (json['operator'] ?? json['company'] ?? '').toString(),
+      busNumber: (json['busNumber'] ?? json['vehicle'] ?? '').toString(),
+    );
+  }
+
+  static ShiftStatus _statusFrom(dynamic raw) {
+    switch (raw?.toString().toLowerCase()) {
+      case 'confirmed':
+        return ShiftStatus.confirmed;
+      case 'started':
+        return ShiftStatus.started;
+      case 'completed':
+        return ShiftStatus.completed;
+      case 'cancelled':
+        return ShiftStatus.cancelled;
+      default:
+        return ShiftStatus.pending;
+    }
+  }
+
   String get timeRange =>
       '${formatHHMM(start)} - ${formatHHMM(end)}  (${formatDDMMYYYY(start)})';
 

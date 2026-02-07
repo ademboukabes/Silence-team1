@@ -12,6 +12,7 @@ class AuthController extends GetxController {
   final isAuthenticated = false.obs;
   final user = Rxn<Map<String, dynamic>>();
   final error = RxnString();
+  final sessionLoading = false.obs;
 
   // Login state
   final loginLoading = false.obs;
@@ -21,13 +22,19 @@ class AuthController extends GetxController {
   final signupLoading = false.obs;
   final signupError = RxnString();
 
+  // Password reset state
+  final resetLoading = false.obs;
+  final resetError = RxnString();
+
   // Call this on app start (splash) to restore session
   Future<void> initSession() async {
+    sessionLoading.value = true;
     error.value = null;
     final access = await tokenStorage.getAccessToken();
     if (access == null || access.isEmpty) {
       isAuthenticated.value = false;
       user.value = null;
+      sessionLoading.value = false;
       return;
     }
 
@@ -41,6 +48,8 @@ class AuthController extends GetxController {
       isAuthenticated.value = false;
       user.value = null;
       error.value = e.toString();
+    } finally {
+      sessionLoading.value = false;
     }
   }
 
@@ -50,23 +59,14 @@ class AuthController extends GetxController {
 
     try {
       final res = await authProvider.login(email: email, password: password);
-
-      // Expected shapes:
-      // 1) { "accessToken": "...", "refreshToken": "...", "user": {...} }
-      // 2) { "access_token": "...", "refresh_token": "...", "user": {...} }
       final access = (res['accessToken'] ?? res['access_token'] ?? res['token'])
           ?.toString();
-      final refresh = (res['refreshToken'] ?? res['refresh_token'])?.toString();
 
       if (access == null || access.isEmpty) {
         throw StateError('Login response missing access token');
       }
 
       await tokenStorage.setAccessToken(access);
-      if (refresh != null && refresh.isNotEmpty) {
-        await tokenStorage.setRefreshToken(refresh);
-      }
-
       // user can be present in login response, else fetch /me
       final u = res['user'];
       if (u is Map) {
@@ -148,5 +148,69 @@ class AuthController extends GetxController {
     await tokenStorage.clear();
     isAuthenticated.value = false;
     user.value = null;
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    resetLoading.value = true;
+    resetError.value = null;
+    try {
+      await authProvider.forgotPassword(email: email);
+      return true;
+    } catch (e) {
+      resetError.value = e.toString();
+      return false;
+    } finally {
+      resetLoading.value = false;
+    }
+  }
+
+  Future<bool> verifyCode({required String email, required String code}) async {
+    resetLoading.value = true;
+    resetError.value = null;
+    try {
+      await authProvider.verifyCode(email: email, code: code);
+      return true;
+    } catch (e) {
+      resetError.value = e.toString();
+      return false;
+    } finally {
+      resetLoading.value = false;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+    required String newPassword,
+    required String code,
+  }) async {
+    resetLoading.value = true;
+    resetError.value = null;
+    try {
+      await authProvider.resetPassword(
+        email: email,
+        newPassword: newPassword,
+        code: code,
+      );
+      return true;
+    } catch (e) {
+      resetError.value = e.toString();
+      return false;
+    } finally {
+      resetLoading.value = false;
+    }
+  }
+
+  Future<bool> saveInterests(List<String> interests) async {
+    resetLoading.value = true;
+    resetError.value = null;
+    try {
+      await authProvider.saveInterests(interests);
+      return true;
+    } catch (e) {
+      resetError.value = e.toString();
+      return false;
+    } finally {
+      resetLoading.value = false;
+    }
   }
 }

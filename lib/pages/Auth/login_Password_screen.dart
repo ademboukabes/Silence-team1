@@ -3,140 +3,160 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:listenlit/controllers/auth_controller.dart';
 import 'package:listenlit/general_widgets/background_imagecontainer.dart';
-import 'package:listenlit/general_widgets/passwordtextfield.dart';
 import 'package:listenlit/general_widgets/primarybutton.dart';
-import 'package:listenlit/general_widgets/primarytextbutton.dart';
-import 'package:listenlit/pages/Auth/forgetpassword_screen.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
-import 'package:listenlit/utils/colors.dart';
-import 'package:listenlit/utils/images_paths.dart';
 
 class LoginPasswordScreen extends StatelessWidget {
-  LoginPasswordScreen({super.key});
-  TextEditingController passController = TextEditingController();
+  LoginPasswordScreen({super.key, required this.email});
+  final TextEditingController passController = TextEditingController();
+  final String email;
+  final AuthController authController = Get.find<AuthController>();
+
   @override
   Widget build(BuildContext context) {
-    return BackgroundImageContainer(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: 24.h),
           child: Column(
             children: [
-              Padding(
-                padding: EdgeInsets.only(
-                  top: 235.h,
-                  right: 263.w,
-                  bottom: 15.h,
-                  left: 32.w,
-                ),
-                child: Text(
-                  'Login',
-                  style: TextStyle(
-                    fontSize: 32.sp,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Inter',
-                    color: AppColor.kLightAccentColor,
-                  ),
+              SizedBox(height: 70.h),
+
+              Text(
+                'APCS',
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w900,
+                  color: cs.onSurface,
+                  fontFamily: 'Inter',
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Container(
-                  width: 358.w,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 24.h,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.r),
-                    color: AppColor.kSamiDarkColor.withOpacity(0.4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColor.kSamiDarkColor.withOpacity(0.5),
-                        blurRadius: 10, // Adjust the blur radius
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    color: Colors.transparent,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: SizedBox(
-                            width: 60.w,
-                            height: 70.h,
-                            child: CircleAvatar(
-                              backgroundImage: AssetImage(
-                                AppImagePath.kProfile,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            'John Doe',
-                            style: TextStyle(
-                              color: AppColor.kLightAccentColor,
-                              fontSize: 16.sp,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'john.doe@example.com',
-                            style: TextStyle(
-                              color: AppColor.kLightAccentColor,
-                              fontSize: 14.sp,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.check_circle_outline,
-                            color: AppColor.kPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 24.h),
-                        PasswordTextField(
-                          hintText: 'Password',
-                          controller: passController,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          width: 326.w,
-                          height: 48.h,
-                        ),
-                        SizedBox(height: 16.h),
-                        PrimaryButton(
-                          onTap: () {
-                            Get.off(() => const LandingScreen());
-                          },
-                          borderRadius: 8.r,
-                          fontSize: 14.sp,
-                          height: 48.h,
-                          width: 326.w,
-                          text: 'Continue',
-                          textColor: AppColor.kWhiteColor,
-                          bgColor: AppColor.kPrimary,
-                        ),
-                        SizedBox(height: 16.h),
-                        PrimaryTextButton(
-                          title: 'Forgot password?',
-                          fontSize: 14.sp,
-                          onPressed: () {
-                            Get.to(() => ForgetPasswordScreen());
-                          },
-                          textColor: AppColor.kPrimary,
-                        ),
-                        SizedBox(height: 32.h),
-                      ],
+
+              SizedBox(height: 16.h),
+
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 22.w),
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 24.h),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26.r),
+                  color: Theme.of(context).cardTheme.color ?? cs.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
                     ),
-                  ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+
+                    SizedBox(height: 6.h),
+
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: cs.onSurface.withOpacity(0.75),
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    _softField(
+                      hint: 'Password',
+                      controller: passController,
+                      obscureText: true,
+                    ),
+
+                    SizedBox(height: 14.h),
+
+                    PrimaryButton(
+                      onTap: _handleLogin,
+                      borderRadius: 18.r,
+                      fontSize: 14.sp,
+                      height: 42.h,
+                      width: 220.w,
+                      text: 'Continue',
+                      textColor: cs.onPrimary,
+                      bgColor: cs.primary,
+                    ),
+
+                    Obx(() {
+                      final err = authController.loginError.value;
+                      if (err == null || err.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: EdgeInsets.only(top: 8.h),
+                        child: Text(
+                          err,
+                          style: TextStyle(
+                            color: cs.error,
+                            fontSize: 12.sp,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLogin() async {
+    final pass = passController.text;
+    if (pass.isEmpty) {
+      authController.loginError.value = 'Please enter your password.';
+      return;
+    }
+    final ok = await authController.login(email: email, password: pass);
+    if (ok) {
+      Get.off(() => const LandingScreen());
+    }
+  }
+
+  Widget _softField({
+    required String hint,
+    required TextEditingController controller,
+    bool obscureText = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      style: const TextStyle(color: Color(0xFF1C3D5A)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          color: Color(0xFF3C5E78),
+          fontWeight: FontWeight.w600,
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.65),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
         ),
       ),
     );

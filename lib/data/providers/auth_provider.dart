@@ -1,7 +1,8 @@
 // lib/data/providers/auth_provider.dart
 import 'package:dio/dio.dart';
 import 'package:listenlit/data/api/endpoints.dart';
-import '../services/api_client.dart';
+
+import '../api/api_client.dart';
 import '../services/token_storage.dart';
 
 class AuthProvider {
@@ -29,39 +30,42 @@ class AuthProvider {
     required String password,
   }) async {
     final res = await _dio.post(
-      Endpoints.login,
+      Endpoints.signup,
       data: {'name': name, 'email': email, 'password': password},
     );
     return _asMap(res.data);
   }
 
   Future<Map<String, dynamic>> me() async {
-    // some backends use /auth/profile or /auth/me
-    final res = await _dio.get(Endpoints.me);
+    final res = await _dio.get(Endpoints.profile);
     return _asMap(res.data);
   }
 
-  Future<Map<String, dynamic>> refresh() async {
-    // only if your backend supports it
-    // common endpoints: /auth/refresh, /auth/refresh-token
-    final refreshToken = await tokenStorage.getRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) {
-      throw StateError('Missing refresh token');
-    }
+  Future<void> forgotPassword({required String email}) async {
+    throw StateError('Forgot password is not available in current backend.');
+  }
 
-    final res = await _dio.post(
-      '/auth/refresh',
-      data: {'refreshToken': refreshToken},
-    );
+  Future<void> verifyCode({required String email, required String code}) async {
+    throw StateError('Verify code is not available in current backend.');
+  }
 
-    return _asMap(res.data);
+  Future<void> resetPassword({
+    required String email,
+    required String newPassword,
+    required String code,
+  }) async {
+    throw StateError('Reset password is not available in current backend.');
+  }
+
+  Future<void> saveInterests(List<String> interests) async {
+    throw StateError('Save interests is not available in current backend.');
   }
 
   Future<void> logout() async {
     // optional: if backend has logout
     // if not, you can delete tokens locally only
     try {
-      await _dio.post('/auth/logout');
+      await _dio.post(Endpoints.logout);
     } on DioException {
       // ignore backend logout errors
     }

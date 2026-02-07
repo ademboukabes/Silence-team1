@@ -12,10 +12,7 @@ class HomeController extends GetxController {
   });
 
   final loading = false.obs;
-
-  // RxnMap n'existe pas -> utilise Rxn<Map<...>> (nullable)
   final Rxn<Map<String, dynamic>> nextBooking = Rxn<Map<String, dynamic>>();
-
   final notifications = <Map<String, dynamic>>[].obs;
   final error = RxnString();
 
@@ -23,15 +20,14 @@ class HomeController extends GetxController {
     loading.value = true;
     error.value = null;
     try {
-      final nb = await bookingProvider.getNextBooking();
+      final list = await bookingProvider.list();
+      final first = list.isNotEmpty ? list.first : null;
+      nextBooking.value =
+          first == null ? null : Map<String, dynamic>.from(first);
 
-      // sécurise le type au cas où le provider renvoie Map dynamique
-      nextBooking.value = nb == null ? null : Map<String, dynamic>.from(nb);
-
-      final list = await notificationProvider.recent();
-      notifications.value = list
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
+      final notifList = await notificationProvider.recent();
+      notifications.value =
+          notifList.map((e) => Map<String, dynamic>.from(e)).toList();
     } catch (e) {
       error.value = e.toString();
     } finally {
