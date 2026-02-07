@@ -5,9 +5,8 @@ services:
     env_file:
       - ./backend/backend.env
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
     volumes:
       - postgres:/var/lib/postgresql/data
     ports:
@@ -45,16 +44,11 @@ services:
       - ./backend/backend.env
     environment:
       # Override DB URL to use container name 'postgres' instead of localhost
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-postgres}?schema=public
+      # - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-postgres}?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
 
-  ai:
-    build: ./ai
-    ports:
-      - '8000:8000'
-    env_file:
-      - ai/ai.env
+ 
 
 volumes:
   postgres:
