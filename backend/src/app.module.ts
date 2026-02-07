@@ -18,8 +18,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
 import { AuditLogModule } from './modules/audit/audit.module';
 import { BlockchainModule } from './modules/blockchain/blockchain.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-// AI Module - Not ready yet
-// import { AiModule } from './modules/AI/ai.module';
+import { AiModule } from './modules/AI/ai.module';
 import { ChatModule } from './modules/chat/chat.module';
 
 
@@ -44,7 +43,7 @@ import { ChatModule } from './modules/chat/chat.module';
     AuditLogModule,
     BlockchainModule,
     AnalyticsModule,
-    // AiModule, // Not ready yet
+    AiModule,
     ChatModule,
   ],
   controllers: [],

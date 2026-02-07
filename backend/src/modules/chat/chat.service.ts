@@ -30,10 +30,10 @@ export class ChatService {
                 data,
             });
 
-            this.logger.log(`✅ Conversation created: ${conversation.id}`);
+            this.logger.log(`Conversation created: ${conversation.id}`);
             return conversation;
         } catch (error) {
-            this.logger.error(`❌ Failed to create conversation: ${error.message}`, error.stack);
+            this.logger.error(`Failed to create conversation: ${error.message}`, error.stack);
             throw this.handlePrismaError(error);
         }
     }

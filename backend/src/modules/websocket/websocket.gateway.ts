@@ -52,19 +52,19 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
             // Join user-specific room
             const userId = payload.sub;
             client.join(`user_${userId}`);
-            this.logger.log(`✅ User ${userId} joined room user_${userId}`);
+            this.logger.log(`User ${userId} joined room user_${userId}`);
 
             // Join role-specific room
             if (payload.role) {
                 const roleRoom = `role_${payload.role}`;
                 client.join(roleRoom);
-                this.logger.log(`✅ User ${userId} joined room ${roleRoom}`);
+                this.logger.log(`User ${userId} joined room ${roleRoom}`);
             } else {
                 this.logger.warn(`User ${userId} has no role in payload.`);
             }
 
         } catch (err) {
-            this.logger.error(`❌ Connection rejected for client ${client.id}: ${err.message}`);
+            this.logger.error(`Connection rejected for client ${client.id}: ${err.message}`);
             client.disconnect();
         }
     }

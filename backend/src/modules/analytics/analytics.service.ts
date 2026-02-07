@@ -83,10 +83,10 @@ export class AnalyticsService {
         const cacheKey = `metrics:${operatorId}:${from.getTime()}:${to.getTime()}:${groupBy}:${terminal || 'all'}:${gate || 'all'}`;
         const cached = await this.cacheManager.get(cacheKey);
         if (cached) {
-            this.logger.log(`✅ Cache HIT for metrics: ${cacheKey}`);
+            this.logger.log(`Cache HIT for metrics: ${cacheKey}`);
             return cached;
         }
-        this.logger.log(`❌ Cache MISS for metrics: ${cacheKey}`);
+        this.logger.log(`Cache MISS for metrics: ${cacheKey}`);
 
         const opIdNum = parseInt(operatorId, 10);
 

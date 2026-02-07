@@ -4,7 +4,8 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: kashmar552
+      POSTGRES_DB: booking-apits
     volumes:
       - postgres:/var/lib/postgresql/data
     ports:
