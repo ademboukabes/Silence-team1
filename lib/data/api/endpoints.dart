@@ -26,8 +26,9 @@ class Endpoints {
   static const shifts = '/shifts';
 
   // TODO: Not present in current backend spec.
-  static const assistantHistory = '/assistant/messages';
-  static const assistantSend = '/assistant/send';
+  static String assistantHistory(String id) =>
+      '/chat/conversations/$id/messages';
+  static const assistantSend = '/chat/conversations';
   static const notifications = '/notifications/recent';
   static const notificationsRead = '/notifications/read';
 }

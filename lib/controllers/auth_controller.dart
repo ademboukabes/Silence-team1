@@ -92,26 +92,27 @@ class AuthController extends GetxController {
   }
 
   /// Inscription de l'utilisateur
+  /// Inscription de l'utilisateur avec "trafic" de rôle via code entreprise
   Future<bool> signup({
     required String name,
     required String email,
     required String password,
+    String? companyCode, // Ajout du paramètre optionnel
   }) async {
     signupLoading.value = true;
     signupError.value = null;
 
     try {
+      // On envoie quand même les données au provider (ajuste authProvider si besoin)
       final res = await authProvider.signup(
         name: name,
         email: email,
         password: password,
       );
 
-      final access = (res['accessToken'] ?? res['access_token'] ?? res['token'])
-          ?.toString();
+      final access = (res['accessToken'] ?? res['access_token'] ?? res['token'])?.toString();
       final refresh = (res['refreshToken'] ?? res['refresh_token'])?.toString();
 
-      // Si le backend connecte l'utilisateur automatiquement après l'inscription
       if (access != null && access.isNotEmpty) {
         await tokenStorage.setAccessToken(access);
         if (refresh != null && refresh.isNotEmpty) {
@@ -119,12 +120,25 @@ class AuthController extends GetxController {
         }
 
         final userData = res['user'];
+        User newUser;
+
         if (userData is Map) {
-          user.value = User.fromJson(Map<String, dynamic>.from(userData));
+          newUser = User.fromJson(Map<String, dynamic>.from(userData));
         } else {
           final me = await authProvider.me();
-          user.value = User.fromJson(Map<String, dynamic>.from(me));
+          newUser = User.fromJson(Map<String, dynamic>.from(me));
         }
+
+        // --- LOGIQUE DE "TRAFIC" DU RÔLE ---
+        if (companyCode != null && companyCode.toLowerCase().startsWith('ag')) {
+          // On crée une copie de l'utilisateur avec le rôle forcé
+          user.value = newUser.copyWith(role: 'agent'); 
+        } else {
+          // On met un rôle par défaut si ce n'est pas un agent
+          user.value = newUser.copyWith(role: 'carrier');
+        }
+        // ------------------------------------
+
         isAuthenticated.value = true;
       }
 
@@ -136,7 +150,6 @@ class AuthController extends GetxController {
       signupLoading.value = false;
     }
   }
-
   /// Déconnexion
   Future<void> logout() async {
     error.value = null;

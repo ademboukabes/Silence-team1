@@ -18,7 +18,9 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // On garde le thème général pour le fond de l'écran
     final theme = Theme.of(context);
+
     final pages = <Widget>[
       const ReserveStep1Screen(),
       const HomeScreen(),
@@ -59,24 +61,19 @@ class _BottomBar extends StatelessWidget {
             final itemWidth = constraints.maxWidth / itemCount;
 
             return SizedBox(
-              height: 60.h, // ✅ hauteur plus sûre
+              height: 65.h,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [cs.surface, cs.surfaceVariant],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  // ✅ Fond blanc/clair forcé pour la barre
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: cs.onSurface.withOpacity(0.10),
+                    color: Colors.black.withOpacity(0.05),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(
-                        theme.brightness == Brightness.dark ? 0.30 : 0.12,
-                      ),
+                      color: Colors.black.withOpacity(0.08),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -86,6 +83,7 @@ class _BottomBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   child: Stack(
                     children: [
+                      // Indicateur de fond lors du clic (léger gris)
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 250),
                         curve: Curves.easeOutCubic,
@@ -96,7 +94,7 @@ class _BottomBar extends StatelessWidget {
                           width: itemWidth,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: cs.primary.withOpacity(0.10),
+                              color: Colors.black.withOpacity(0.03),
                             ),
                           ),
                         ),
@@ -104,32 +102,32 @@ class _BottomBar extends StatelessWidget {
                       Row(
                         children: [
                           _navItem(
-                            context: context,
-                            index: 0,
-                            icon: Icons.calendar_month_outlined,
-                            activeIcon: Icons.calendar_month_rounded,
-                            label: 'Réserver',
+                            context,
+                            0,
+                            Icons.calendar_month_outlined,
+                            Icons.calendar_month_rounded,
+                            'Réserver',
                           ),
                           _navItem(
-                            context: context,
-                            index: 1,
-                            icon: Icons.home_outlined,
-                            activeIcon: Icons.home_rounded,
-                            label: 'Accueil',
+                            context,
+                            1,
+                            Icons.home_outlined,
+                            Icons.home_rounded,
+                            'Accueil',
                           ),
                           _navItem(
-                            context: context,
-                            index: 2,
-                            icon: Icons.smart_toy_outlined,
-                            activeIcon: Icons.smart_toy_rounded,
-                            label: 'Assistant',
+                            context,
+                            2,
+                            Icons.smart_toy_outlined,
+                            Icons.smart_toy_rounded,
+                            'Assistant',
                           ),
                           _navItem(
-                            context: context,
-                            index: 3,
-                            icon: Icons.person_outline_rounded,
-                            activeIcon: Icons.person_rounded,
-                            label: 'Profil',
+                            context,
+                            3,
+                            Icons.person_outline_rounded,
+                            Icons.person_rounded,
+                            'Profil',
                           ),
                         ],
                       ),
@@ -144,76 +142,58 @@ class _BottomBar extends StatelessWidget {
     );
   }
 
-  Widget _navItem({
-    required BuildContext context,
-    required int index,
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-  }) {
+  Widget _navItem(
+    BuildContext context,
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
     final cs = Theme.of(context).colorScheme;
     final active = currentIndex == index;
 
-    final activeFg = cs.onPrimary;
-    final inactiveFg = cs.onSurface.withOpacity(0.55);
+    // ✅ Couleurs d'écriture et icônes forcées en noir/gris
+    final activeColor =
+        cs.primary; // Garde ta couleur principale (bleu) pour l'élément actif
+    final inactiveColor = Colors.black.withOpacity(
+      0.5,
+    ); // Noir 50% pour le reste
 
     return Expanded(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onTap(index),
-          child: SizedBox(
-            height: double.infinity, // ✅ prend toute la hauteur dispo
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOutCubic,
-                    padding: EdgeInsets.all(active ? 8.w : 6.w), // ✅ réduit
-                    decoration: BoxDecoration(
-                      color: active ? cs.primary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: active
-                          ? [
-                              BoxShadow(
-                                color: cs.primary.withOpacity(0.30),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Icon(
-                      active ? activeIcon : icon,
-                      color: active ? activeFg : inactiveFg,
-                      size: 22.sp, // ✅ stable
-                    ),
-                  ),
-                  SizedBox(height: 3.h),
-                  SizedBox(
-                    width: 70.w, // ✅ évite que le texte “pousse” la hauteur
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10.sp, // ✅ petit
-                          fontWeight: active
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                          color: active ? cs.onSurface : inactiveFg,
-                          letterSpacing: 0.1,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                padding: EdgeInsets.all(active ? 8.w : 6.w),
+                decoration: BoxDecoration(
+                  color: active ? activeColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  active ? activeIcon : icon,
+                  color: active
+                      ? Colors.white
+                      : inactiveColor, // Icône blanche sur bleu si actif
+                  size: 22.sp,
+                ),
               ),
-            ),
+              SizedBox(height: 4.h),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  fontWeight: active ? FontWeight.bold : FontWeight.w500,
+                  color: active
+                      ? Colors.black
+                      : inactiveColor, // ✅ Texte noir si actif
+                ),
+              ),
+            ],
           ),
         ),
       ),

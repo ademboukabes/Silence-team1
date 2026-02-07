@@ -3,15 +3,21 @@ class User {
   final String name;
   final String email;
   final String role;
-  final String avatarUrl;
 
   User({
     required this.id,
     required this.name,
     required this.email,
     required this.role,
-    required this.avatarUrl,
   });
+  User copyWith({String? name, String? email, String? role}) {
+    return User(
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      id: id,
+    );
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -19,7 +25,6 @@ class User {
       name: (json['name'] ?? json['fullName'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
       role: (json['role'] ?? '').toString(),
-      avatarUrl: (json['avatar'] ?? json['avatarUrl'] ?? '').toString(),
     );
   }
 }

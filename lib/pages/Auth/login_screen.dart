@@ -31,7 +31,7 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 70.h),
 
               Text(
-                'APOS',
+                'APCS',
                 style: TextStyle(
                   fontSize: 28.sp,
                   fontWeight: FontWeight.w900,

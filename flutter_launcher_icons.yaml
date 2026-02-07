@@ -1,0 +1,8 @@
+flutter_native_splash:
+  color: "#FFFFFF"              # La couleur de fond de ton écran
+  image: assets/images/logo.png # Ton logo unique
+  # Pas besoin de foreground ici
+  
+  android_12:
+    image: assets/images/logo.png
+    color: "#FFFFFF"

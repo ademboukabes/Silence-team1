@@ -339,7 +339,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
   Widget _buildInputArea() {
     return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
+      // Réduction du padding vertical du conteneur parent
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
       decoration: BoxDecoration(
         color: const Color(0xFF0D1F31),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
@@ -356,107 +357,93 @@ class _AssistantScreenState extends State<AssistantScreen> {
         children: [
           Expanded(
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: 48.h, maxHeight: 100.h),
+              // ✅ Diminution de minHeight (de 48h à 40h)
+              constraints: BoxConstraints(minHeight: 40.h, maxHeight: 100.h),
               child: Container(
-                width: double.infinity,
                 decoration: BoxDecoration(
                   color: const Color(0xFF1F3A57),
-                  borderRadius: BorderRadius.circular(24.r),
+                  borderRadius: BorderRadius.circular(
+                    20.r,
+                  ), // Plus arrondi pour moins de hauteur visuelle
                   border: Border.all(
                     color: const Color(0xFF4A90E2).withOpacity(0.3),
-                    width: 1.5,
+                    width: 1.2,
                   ),
                 ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 4.w,
-                  ), // petit padding externe
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextField(
-                      controller: inputController,
-                      focusNode: _focusNode,
-                      maxLines: null,
-                      minLines: 1,
-                      textInputAction: TextInputAction.newline,
-                      style: TextStyle(
-                        color: Colors.white, // ✅ sur fond dark
-                        fontSize: 15.sp,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      cursorColor: Colors.white,
-                      cursorWidth: 2.5,
-                      decoration: InputDecoration(
-                        hintText: 'Demandez un créneau ou une info...',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.45),
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        isDense: true,
-                        filled: false,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
-                        ),
-                      ),
-                      onSubmitted: (_) => _handleSend(),
+                child: Center(
+                  // ✅ Centre le texte verticalement
+                  child: TextField(
+                    controller: inputController,
+                    focusNode: _focusNode,
+                    maxLines: 5, // Limite l'auto-expansion
+                    minLines: 1,
+                    textInputAction: TextInputAction.newline,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.sp, // Taille légèrement réduite
+                      height: 1.2,
                     ),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Posez votre question...',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.4),
+                        fontSize: 13.sp,
+                      ),
+                      isDense: true,
+                      border: InputBorder.none,
+                      // ✅ Réduction du padding interne (vertical de 12h à 8h)
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                    ),
+                    onSubmitted: (_) => _handleSend(),
                   ),
                 ),
               ),
             ),
           ),
-
           SizedBox(width: 8.w),
-          Obx(
-            () => AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 48.w,
-              height: 48.w,
-              decoration: BoxDecoration(
-                gradient:
-                    inputController.text.isNotEmpty && !controller.sending.value
-                    ? const LinearGradient(
-                        colors: [Color(0xFF4A90E2), Color(0xFF2E5C8A)],
-                      )
-                    : null,
-                color: inputController.text.isEmpty || controller.sending.value
-                    ? Colors.white.withOpacity(0.1)
-                    : null,
-                shape: BoxShape.circle,
-                boxShadow:
-                    inputController.text.isNotEmpty && !controller.sending.value
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF4A90E2).withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24.r),
-                  onTap: controller.sending.value ? null : _handleSend,
-                  child: Icon(
-                    controller.sending.value
-                        ? Icons.stop_rounded
-                        : Icons.send_rounded,
-                    color: Colors.white,
-                    size: 22.sp,
-                  ),
-                ),
-              ),
+          // Bouton d'envoi légèrement plus petit pour matcher la hauteur
+          _buildSendButton(),
+        ],
+      ),
+    );
+  }
+
+  // Helper pour le bouton d'envoi pour garder le code propre
+  Widget _buildSendButton() {
+    return Obx(
+      () => AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 42.w, // Réduit de 48w à 42w
+        height: 42.w,
+        decoration: BoxDecoration(
+          gradient: inputController.text.isNotEmpty && !controller.sending.value
+              ? const LinearGradient(
+                  colors: [Color(0xFF4A90E2), Color(0xFF2E5C8A)],
+                )
+              : null,
+          color: inputController.text.isEmpty || controller.sending.value
+              ? Colors.white.withOpacity(0.1)
+              : null,
+          shape: BoxShape.circle,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(21.r),
+            onTap: controller.sending.value ? null : _handleSend,
+            child: Icon(
+              controller.sending.value
+                  ? Icons.stop_rounded
+                  : Icons.send_rounded,
+              color: Colors.white,
+              size: 20.sp,
             ),
           ),
-        ],
+        ),
       ),
     );
   }

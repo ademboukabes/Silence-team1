@@ -6,22 +6,26 @@ class AssistantProvider {
   AssistantProvider(this.api);
 
   /// Récupère l'historique des conversations
-  Future<List<dynamic>> history() async {
+  /// Récupère l'historique via l'ID de la conversation
+  Future<List<dynamic>> history(String conversationId) async {
     try {
-      final res = await api.dio.get(Endpoints.assistantHistory);
+      // On ajoute l'ID à la fin de l'endpoint
+      final res = await api.dio.get(
+        '${Endpoints.assistantHistory}/$conversationId',
+      );
       return List<dynamic>.from(res.data);
     } catch (e) {
-      // On propage l'erreur pour que le controller puisse l'afficher
       rethrow;
     }
   }
 
-  /// Envoie un message et reçoit la réponse de l'IA (qui peut déclencher un booking en back)
-  Future<Map<String, dynamic>> send(String message) async {
+  /// ✅ Corrigé : On accepte maintenant le Map préparé par le controller
+  Future<Map<String, dynamic>> send(Map<String, dynamic> payload) async {
     try {
       final res = await api.dio.post(
         Endpoints.assistantSend,
-        data: {'message': message},
+        data:
+            payload, // ✅ On envoie le payload complet (message, user_id, role, etc.)
       );
 
       // On s'assure que la réponse est bien un Map

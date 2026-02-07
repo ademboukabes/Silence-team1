@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:listenlit/controllers/home_controller.dart';
 import 'package:listenlit/controllers/auth_controller.dart';
+import 'package:listenlit/pages/option/optionscreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final HomeController controller = Get.find<HomeController>();
   final AuthController auth = Get.find<AuthController>();
-  
+
   // Clé pour ouvrir le drawer via un bouton personnalisé
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -28,8 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey, // On lie la clé au Scaffold
-      backgroundColor: const Color(0xFF1A1A1A), // Votre couleur de fond sombre
-      
+      backgroundColor: const Color.fromARGB(
+        255,
+        227,
+        225,
+        225,
+      ), // Votre couleur de fond sombre
       // --- LE DRAWER (SIDE BAR) ---
       drawer: Drawer(
         backgroundColor: const Color(0xFF274B66),
@@ -49,15 +54,22 @@ class _HomeScreenState extends State<HomeScreen> {
             }),
             ListTile(
               leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text('Paramètres', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Paramètres',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () {
-                // Naviguer vers paramètres
+                Get.back(); // Ferme le drawer
+                Get.to(() => const SettingsScreen());
               },
             ),
             const Spacer(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Déconnexion', style: TextStyle(color: Colors.redAccent)),
+              title: const Text(
+                'Déconnexion',
+                style: TextStyle(color: Colors.redAccent),
+              ),
               onTap: () => auth.logout(),
             ),
             SizedBox(height: 20.h),
@@ -107,9 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              
+
               SizedBox(height: 20.h),
-              
+
               // --- WELCOME TEXT ---
               Obx(() {
                 final u = auth.user.value;
@@ -124,9 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               }),
-              
+
               SizedBox(height: 16.h),
-              
+
               // --- CARTE PROCHAINE RESERVATION ---
               _Card(
                 child: Obx(() {
@@ -169,7 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Align(
                         alignment: Alignment.center,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 10.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 28.w,
+                            vertical: 10.h,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF0E6CFF),
                             borderRadius: BorderRadius.circular(20),
@@ -188,9 +203,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }),
               ),
-              
+
               SizedBox(height: 14.h),
-              
+
               // --- NOTIFICATIONS ---
               _Card(
                 child: Obx(() {
@@ -213,17 +228,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (items.isEmpty)
                         Text(
                           'Aucune notification',
-                          style: TextStyle(color: Colors.white70, fontSize: 12.sp),
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12.sp,
+                          ),
                         ),
                       for (final n in items.take(3)) ...[
                         Text(
                           n['title']?.toString() ?? 'Notif',
-                          style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.sp,
+                          ),
                         ),
                         SizedBox(height: 4.h),
                         Text(
                           n['body']?.toString() ?? '',
-                          style: TextStyle(color: Colors.white70, fontSize: 11.sp),
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11.sp,
+                          ),
                         ),
                         Divider(color: Colors.white10),
                       ],

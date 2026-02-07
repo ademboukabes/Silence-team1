@@ -16,6 +16,8 @@ class SignUpScreen extends StatelessWidget {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passController = TextEditingController();
+  // 1. Nouveau contrôleur pour le code entreprise
+  final TextEditingController companyCodeController = TextEditingController();
 
   final AuthController authController = Get.find<AuthController>();
 
@@ -23,21 +25,29 @@ class SignUpScreen extends StatelessWidget {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final pass = passController.text;
+    final companyCode = companyCodeController.text.trim();
 
     if (name.isEmpty || email.isEmpty || pass.isEmpty) {
       authController.signupError.value = 'Please fill all fields.';
       return;
     }
 
+    // On passe le companyCode à la méthode signup
+    // (Assure-toi que ton AuthController accepte cet argument ou gère le via une autre méthode)
     final ok = await authController.signup(
       name: name,
       email: email,
       password: pass,
+      // companyCode: companyCode, // Décommente si ton backend le supporte déjà
     );
-    if (ok && authController.user.value?.role != 'agent') {
-      Get.offAll(() => const LandingScreen());
-    } else if (ok && authController.user.value?.role == 'agent') {
-      Get.offAll(() => const AgentScannerScreen());
+
+    if (ok) {
+      final role = authController.user.value?.role?.toLowerCase();
+      if (role == 'agent' || role == 'agentt') {
+        Get.offAll(() => const AgentScannerScreen());
+      } else {
+        Get.offAll(() => const LandingScreen());
+      }
     }
   }
 
@@ -55,7 +65,7 @@ class SignUpScreen extends StatelessWidget {
             children: [
               SizedBox(height: 70.h),
               Text(
-                'APOS',
+                'APCS',
                 style: TextStyle(
                   fontSize: 28.sp,
                   fontWeight: FontWeight.w900,
@@ -91,7 +101,6 @@ class SignUpScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 16.h),
 
-                    // ✅ champs modernes
                     _buildModernField(
                       context: context,
                       hint: 'Name',
@@ -105,6 +114,14 @@ class SignUpScreen extends StatelessWidget {
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: Icons.mail_outline_rounded,
+                    ),
+                    SizedBox(height: 12.h),
+                    // 2. AJOUT DU CHAMP COMPANY CODE
+                    _buildModernField(
+                      context: context,
+                      hint: 'Company Code (Optional)',
+                      controller: companyCodeController,
+                      prefixIcon: Icons.business_rounded,
                     ),
                     SizedBox(height: 12.h),
                     _buildModernField(
@@ -177,6 +194,7 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
+  // ... Ton widget _buildModernField reste identique
   Widget _buildModernField({
     required BuildContext context,
     required String hint,
