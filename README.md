@@ -19,7 +19,6 @@
 10. DevOps & Déploiement  
 11. Limites & améliorations futures  
 12. Contributeurs  
-13. Licence  
 
 ---
 
