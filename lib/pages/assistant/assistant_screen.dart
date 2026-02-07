@@ -15,15 +15,20 @@ class _AssistantScreenState extends State<AssistantScreen> {
   final TextEditingController inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
+  late final Worker _messageWorker;
 
   @override
   void initState() {
     super.initState();
+    inputController.addListener(_onInputChanged);
+    _messageWorker = ever(controller.messages, (_) => _scrollToBottom());
     controller.loadHistory().then((_) => _scrollToBottom());
   }
 
   @override
   void dispose() {
+    _messageWorker.dispose();
+    inputController.removeListener(_onInputChanged);
     inputController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -524,7 +529,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(20.r),
             onTap: () {
-              inputController.text = suggestion.substring(2).trim();
+              inputController.text = suggestion;
               _handleSend();
             },
             child: Container(
@@ -588,7 +593,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                controller.loadHistory().then((_) => _scrollToBottom());
+                controller.loadHistory(force: true).then((_) => _scrollToBottom());
               },
             ),
             ListTile(
@@ -629,5 +634,10 @@ class _AssistantScreenState extends State<AssistantScreen> {
     final h = t.hour.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  void _onInputChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 }

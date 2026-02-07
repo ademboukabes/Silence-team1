@@ -38,7 +38,7 @@ class SignUpScreen extends StatelessWidget {
       name: name,
       email: email,
       password: pass,
-      // companyCode: companyCode, // Décommente si ton backend le supporte déjà
+      companyCode: companyCode,
     );
 
     if (ok) {

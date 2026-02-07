@@ -16,6 +16,7 @@ class AssistantController extends GetxController {
 
   // On stocke l'ID de conversation pour le renvoyer à chaque message
   final conversationId = RxnString();
+  bool _historyLoaded = false;
 
   @override
   void onInit() {
@@ -23,15 +24,17 @@ class AssistantController extends GetxController {
     loadHistory();
   }
 
-  Future<void> loadHistory() async {
+  Future<void> loadHistory({bool force = false}) async {
+    if (loading.value) return;
+    if (_historyLoaded && !force) return;
+
     loading.value = true;
     error.value = null;
     try {
       final userId = auth.user.value?.id.toString() ?? "";
-
       final list = await repo.history(userId);
-
       messages.value = list.map((e) => Map<String, dynamic>.from(e)).toList();
+      _historyLoaded = true;
     } catch (e) {
       error.value = "Impossible de charger l'historique";
     } finally {

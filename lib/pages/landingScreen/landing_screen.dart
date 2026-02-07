@@ -15,6 +15,19 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen> {
   int _currentIndex = 1;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +44,18 @@ class _LandingScreenState extends State<LandingScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: pages),
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: pages,
+      ),
       bottomNavigationBar: _BottomBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: (i) {
+          if (_currentIndex == i) return;
+          setState(() => _currentIndex = i);
+          _pageController.jumpToPage(i);
+        },
       ),
     );
   }
