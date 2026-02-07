@@ -12,7 +12,7 @@
  * 7. Blockchain Notarization Audit
  */
 
-const fetch = require('node-fetch');
+// Node.js v18+ has native fetch support
 
 const BASE_URL = 'http://localhost:3000/api';
 
@@ -190,6 +190,34 @@ async function runTestAll() {
             log('🔗', 'Blockchain Notarization verified in Audit Logs!', colors.magenta);
         } else {
             log('⚠️', 'Blockchain notarization log not found in recent logs (background task may be pending).', colors.yellow);
+        }
+
+        // =====================================================
+        // STEP 6: RATE LIMITING VERIFICATION
+        // =====================================================
+        header('🛡️ STEP 6: Rate Limiting \u0026 Security Controls');
+
+        log('⚡', 'Testing rate limiting (10 requests/min limit)...', colors.blue);
+        let rateLimitActive = false;
+
+        for (let i = 1; i <= 12; i++) {
+            try {
+                const testRes = await apiCall('GET', '/bookings');
+                if (testRes.status === 429) {
+                    log('⛔', `Request ${i}: BLOCKED by rate limiter (429 Too Many Requests)`, colors.yellow);
+                    rateLimitActive = true;
+                    break;
+                }
+            } catch (error) {
+                // Continue testing
+            }
+            await wait(100); // Small delay between requests
+        }
+
+        if (rateLimitActive) {
+            log('✅', 'Rate limiting is ACTIVE and protecting the API', colors.green);
+        } else {
+            log('ℹ️', 'Rate limiting not triggered in this test run', colors.cyan);
         }
 
         header('🏆 FULL SYSTEM VALIDATION COMPLETE!');
