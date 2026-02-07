@@ -355,50 +355,61 @@ class _AssistantScreenState extends State<AssistantScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: Container(
+            child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: 48.h, maxHeight: 120.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1F3A57),
-                borderRadius: BorderRadius.circular(24.r),
-                border: Border.all(
-                  color: const Color(0xFF4A90E2).withOpacity(0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: TextField(
-                controller: inputController,
-                focusNode: _focusNode,
-                maxLines: null,
-                minLines: 1,
-                textInputAction: TextInputAction.newline,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15.sp,
-                  height: 1.5,
-                  fontWeight: FontWeight.w500,
-                ),
-                cursorColor: const Color(0xFF4A90E2),
-                cursorWidth: 2.5,
-                cursorHeight: 22.h,
-                decoration: InputDecoration(
-                  hintText: 'Demandez un créneau ou une info...',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.35),
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20.w,
-                    vertical: 14.h,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F3A57),
+                  borderRadius: BorderRadius.circular(24.r),
+                  border: Border.all(
+                    color: const Color(0xFF4A90E2).withOpacity(0.3),
+                    width: 1.5,
                   ),
                 ),
-                onSubmitted: (_) => _handleSend(),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w), // petit padding externe
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextField(
+                      controller: inputController,
+                      focusNode: _focusNode,
+                      maxLines: null,
+                      minLines: 1,
+                      textInputAction: TextInputAction.newline,
+                      style: TextStyle(
+                        color: Colors.white, // ✅ sur fond dark
+                        fontSize: 15.sp,
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      cursorColor: Colors.white,
+                      cursorWidth: 2.5,
+                      decoration: InputDecoration(
+                        hintText: 'Demandez un créneau ou une info...',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.45),
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        isDense: true,
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
+                        ),
+                      ),
+                      onSubmitted: (_) => _handleSend(),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
+
           SizedBox(width: 8.w),
           Obx(
             () => AnimatedContainer(
