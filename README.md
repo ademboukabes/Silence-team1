@@ -62,7 +62,7 @@ Database
 
 ---
 
-## 🤖 AI System – Architecture Multi-Agents
+## 🤖 AI System – Architecture Multi-Agents with framework Agno
 
 Le système IA est basé sur un **Orchestrator Agent** central coordonnant plusieurs agents spécialisés.
 
@@ -111,8 +111,8 @@ flowchart TD
 ## 🛠️ Technologies utilisées
 
 ### Backend
-- Python  
-- FastAPI / Flask  
+- Nest.js
+- FastAPI 
 - REST API  
 
 ### AI System
@@ -124,7 +124,9 @@ flowchart TD
 
 ### DevOps
 - Docker  
-- Docker Compose  
+- Docker Compose
+### Mobile
+- Flutter
 
 ---
 
@@ -164,6 +166,6 @@ Docs API : http://localhost:8000/docs
 
 ## 👥 Contributeurs
 
-Projet développé dans le cadre d’un **hackathon** par l’équipe APCS.
+Projet développé dans le cadre d’un **hackathon** par l’équipe Silence.
 
 ---
