@@ -122,8 +122,6 @@ class AuthController extends GetxController {
         }
         isAuthenticated.value = true;
       } else {
-        // If signup doesn't login, you can still proceed to next screen
-        // and ask user to login later, or auto-login by calling login()
         isAuthenticated.value = false;
       }
 

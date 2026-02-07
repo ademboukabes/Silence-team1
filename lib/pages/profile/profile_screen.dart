@@ -51,7 +51,7 @@ class ProfileScreen extends StatelessWidget {
                   // ✅ rang avatar + infos rapides
                   Row(
                     children: [
-                      _Avatar(),
+                      _Avatar(avatarUrl: avatarUrl),
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Column(
@@ -197,25 +197,6 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class _Initial extends StatelessWidget {
-  final String initial;
-  const _Initial({required this.initial});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Text(
-        initial,
-        style: TextStyle(
-          color: cs.primary,
-          fontWeight: FontWeight.w800,
-          fontSize: 18.sp,
-        ),
-      ),
-    );
-  }
-}
 
 class _Card extends StatelessWidget {
   final Widget child;

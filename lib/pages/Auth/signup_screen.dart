@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:listenlit/controllers/auth_controller.dart';
-import 'package:listenlit/general_widgets/background_imagecontainer.dart';
+
 import 'package:listenlit/general_widgets/primarybutton.dart';
 import 'package:listenlit/pages/Auth/choose_interest_view.dart';
 import 'package:listenlit/pages/Auth/login_screen.dart';
 import 'package:listenlit/pages/Auth/widgets/tremsandprivacytext.dart';
-import 'package:listenlit/utils/colors.dart';
 
 class SignUpScreen extends StatelessWidget {
   SignUpScreen({super.key});

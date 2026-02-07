@@ -16,9 +16,6 @@ import 'data/providers/auth_provider.dart';
 import 'data/providers/booking_provider.dart';
 import 'data/providers/notification_provider.dart';
 import 'data/providers/assistant_provider.dart';
-import 'data/providers/gate_provider.dart';
-import 'data/providers/truck_provider.dart';
-
 // Repositories
 import 'data/repositories/auth_repo.dart';
 import 'data/repositories/booking_repo.dart';
