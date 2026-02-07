@@ -22,3 +22,9 @@ logs
 # Ignore test coverage
 coverage
 .nyc_output
+
+# Ignore frontend (separate service)
+frontend
+
+# Ignore backend folder (root contains actual source)
+backend

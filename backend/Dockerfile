@@ -1,45 +1,41 @@
-# Stage 1: Build
-FROM node:20-slim AS builder
-
-# Install OpenSSL and other dependencies needed for Prisma
-RUN apt-get update && apt-get install -y openssl python3 make g++ && rm -rf /var/lib/apt/lists/*
-
+# Stage 1: Dependencies
+FROM node:20-slim AS deps
 WORKDIR /app
-
-# Copy configuration files
 COPY package*.json ./
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
-COPY prisma ./prisma/
+# Install ALL dependencies for build
+RUN npm ci --legacy-peer-deps
 
-# Install dependencies
-RUN npm install --legacy-peer-deps
-
-# Copy application source
+# Stage 2: Build
+FROM node:20-slim AS builder
+# Install OpenSSL for Prisma generate
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Generates Prisma Client
+# Generate Prisma Client
 RUN npx prisma generate
-
+# Compile seed script
+RUN npx tsc prisma/seed.ts --outDir dist/prisma --esModuleInterop --module commonjs --target es2017 --skipLibCheck
 # Build the application
-RUN npm run build && ls -R dist
+RUN npm run build
 
-# Stage 2: Production
-FROM node:20-slim
+# Stage 4: Runner
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NODE_PATH=/app/node_modules
 
 # Install OpenSSL for Prisma
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-# Copy built assets and dependencies from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-# Expose the API port
+# Install production dependencies directly in the runner stage to ensure correct linking
+RUN npm ci --only=production --legacy-peer-deps && npx prisma generate
+
 EXPOSE 3000
 
-# Run migrations, seed the database, and start the application
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && npx prisma db seed && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss --schema=prisma/schema.prisma && npx prisma db seed && node dist/main.js"]

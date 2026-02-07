@@ -2,6 +2,8 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { CreateNotificationDto } from './notificationDto/createNotification.dto';
 import { Notification } from '@prisma/client';
+import { WebsocketService } from 'src/modules/websocket/websocket.service';
+import { MailService } from '../mail/mail.service';
 import * as firebase from 'firebase-admin';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -26,7 +28,11 @@ if (fs.existsSync(firebaseConfigPath)) {
 
 @Injectable()
 export class NotificationService {
-  constructor(private prismaService: PrismaService) { }
+  constructor(
+    private prismaService: PrismaService,
+    private websocketService: WebsocketService,
+    private mailService: MailService,
+  ) { }
 
   async createNotification(
     notificationDto: CreateNotificationDto,
@@ -36,6 +42,22 @@ export class NotificationService {
         data: notificationDto,
       });
       let { title, body } = notificationDto;
+
+      // Emit WebSocket event for real-time notification delivery
+      this.websocketService.notifyUser(
+        createdNotification.userId.toString(),
+        'NEW_NOTIFICATION',
+        {
+          notificationId: createdNotification.id,
+          title: createdNotification.title,
+          body: createdNotification.body,
+          // type and relatedTerminalId are not supported in current Prisma schema
+          // type: createdNotification.type,
+          // relatedTerminalId: createdNotification.relatedTerminalId,
+          timestamp: createdNotification.createdAt,
+        }
+      );
+
       if (firebase.apps.length > 0) {
         await firebase
           .messaging()
@@ -58,23 +80,33 @@ export class NotificationService {
   async sendBookingEmail(type: 'CONFIRMATION' | 'REJECTION' | 'CANCELLATION', booking: any) {
     const { driverEmail, driverName, id, qrCode } = booking;
 
-    // In a real production system, this would use a service like SendGrid, Mailgun, or AWS SES
-    console.log(`--- [PRODUCTION NOTIFICATION LOG] ---`);
-    console.log(`To: ${driverEmail} (${driverName})`);
-    console.log(`Subject: Booking ${type} - ${id}`);
+    let subject = `Booking ${type} - ${id}`;
+    let html = '';
 
     if (type === 'CONFIRMATION') {
-      console.log(`Body: Hello ${driverName}, your booking ${id} has been CONFIRMED.`);
-      console.log(`QR Code URL: ${qrCode}`);
-      console.log(`Please present this QR code at the gate.`);
+      html = `
+        <h1>Booking Confirmed</h1>
+        <p>Hello ${driverName},</p>
+        <p>Your booking <strong>${id}</strong> has been CONFIRMED.</p>
+        <p>Please present this QR code at the gate:</p>
+        <img src="${qrCode}" alt="QR Code" />
+      `;
     } else if (type === 'REJECTION') {
-      console.log(`Body: Hello, your booking request ${id} has been REJECTED by the terminal operator.`);
+      html = `
+        <h1>Booking Rejected</h1>
+        <p>Hello,</p>
+        <p>Your booking request <strong>${id}</strong> has been REJECTED by the terminal operator.</p>
+      `;
     } else {
-      console.log(`Body: Booking ${id} has been CANCELLED.`);
+      html = `
+        <h1>Booking Cancelled</h1>
+        <p>Booking <strong>${id}</strong> has been CANCELLED.</p>
+      `;
     }
-    console.log(`-------------------------------------`);
 
-    // We could also record this in the database if needed
+    // Send real email via Resend
+    await this.mailService.sendEmail(driverEmail, subject, html);
+
     return true;
   }
 }

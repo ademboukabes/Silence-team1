@@ -239,7 +239,6 @@ async def chat(
     http_request: Request,
     llm: bool = Query(default=True, description="Use LLM orchestration (set to false for deterministic mode)")
 ):
-    print(os.environ)
     role = request.user_role.strip().upper()
     if role not in ALLOWED_ROLES:
         raise HTTPException(
