@@ -16,9 +16,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final HomeController controller = Get.find<HomeController>();
   final AuthController auth = Get.find<AuthController>();
 
-  // Clé pour ouvrir le drawer via un bouton personnalisé
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -28,50 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // On lie la clé au Scaffold
       backgroundColor: Colors.white,
-      // --- LE DRAWER (SIDE BAR) ---
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF274B66),
-        child: Column(
-          children: [
-            Obx(() {
-              final u = auth.user.value;
-              return UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(color: Color(0xFF1D3547)),
-                accountName: Text(u?.name ?? 'Utilisateur'),
-                accountEmail: Text(u?.email ?? ''),
-                currentAccountPicture: const CircleAvatar(
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, color: Colors.white),
-                ),
-              );
-            }),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text(
-                'Paramètres',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Get.back(); // Ferme le drawer
-                Get.to(() => const SettingsScreen());
-              },
-            ),
-            const Spacer(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text(
-                'Déconnexion',
-                style: TextStyle(color: Colors.redAccent),
-              ),
-              onTap: () => auth.logout(),
-            ),
-            SizedBox(height: 20.h),
-          ],
-        ),
-      ),
-
       // --- CORPS DE L'ÉCRAN ---
       body: SafeArea(
         child: RefreshIndicator(
@@ -82,19 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
               // --- TOP BAR PERSONNALISÉE ---
               Row(
                 children: [
-                  // BOUTON MENU (EN HAUT À GAUCHE)
-                  GestureDetector(
-                    onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    child: Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.menu, color: Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 15.w),
                   Text(
                     'APCS',
                     style: TextStyle(
