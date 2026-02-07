@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:listenlit/controllers/auth_controller.dart';
-import 'package:listenlit/general_widgets/background_imagecontainer.dart';
+
 import 'package:listenlit/general_widgets/primarybutton.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
 

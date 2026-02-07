@@ -7,7 +7,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // Pages
 import 'package:listenlit/pages/Auth/login_screen.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
-import 'package:listenlit/pages/agent/agent_scanner_screen.dart';
 
 // Data & Providers
 import 'data/api/api_client.dart';
@@ -16,9 +15,6 @@ import 'data/providers/auth_provider.dart';
 import 'data/providers/booking_provider.dart';
 import 'data/providers/notification_provider.dart';
 import 'data/providers/assistant_provider.dart';
-import 'data/providers/gate_provider.dart';
-import 'data/providers/truck_provider.dart';
-
 // Repositories
 import 'data/repositories/auth_repo.dart';
 import 'data/repositories/booking_repo.dart';
@@ -168,26 +164,17 @@ class _AppRootState extends State<AppRoot> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (_skipAuth) return const LandingScreen();
-
+      // 1. Toujours afficher le chargement pendant que l'on vérifie le token
       if (_auth.sessionLoading.value) {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
 
+      // 2. Si authentifié, on va vers le Landing (qui lui gérera l'affichage selon le rôle)
       if (_auth.isAuthenticated.value) {
-        final user = _auth.user.value ?? {};
-        final role = user['role']?.toString().toUpperCase();
-
-        // Sécurité : Les chauffeurs (DRIVER) n'ont pas accès à l'app carrier
-        if (role == 'DRIVER') {
-          return const AccessDeniedScreen();
-        }
-        if (role == 'AGENT' || role == 'AGENTT') {
-          return const AgentScannerScreen();
-        }
         return const LandingScreen();
       }
 
+      // 3. Sinon, retour au Login
       return LoginScreen();
     });
   }

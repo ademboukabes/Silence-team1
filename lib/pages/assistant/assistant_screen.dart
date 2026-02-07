@@ -356,7 +356,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
         children: [
           Expanded(
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: 48.h, maxHeight: 120.h),
+              constraints: BoxConstraints(minHeight: 48.h, maxHeight: 100.h),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -368,7 +368,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
                   ),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w), // petit padding externe
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 4.w,
+                  ), // petit padding externe
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: TextField(
@@ -520,9 +522,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
   Widget _buildSuggestionChips() {
     final suggestions = [
-      '📅 Créneaux disponibles',
-      '🚢 État des navires',
-      '📊 Statistiques du jour',
+      'Créneaux disponibles',
+      'État des navires',
+      'Statistiques du jour',
     ];
 
     return Wrap(

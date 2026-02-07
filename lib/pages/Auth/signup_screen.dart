@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:listenlit/controllers/auth_controller.dart';
-import 'package:listenlit/general_widgets/background_imagecontainer.dart';
 import 'package:listenlit/general_widgets/primarybutton.dart';
-import 'package:listenlit/pages/Auth/choose_interest_view.dart';
+import 'package:listenlit/pages/landingScreen/landing_screen.dart';
+import 'package:listenlit/pages/agent/agent_scanner_screen.dart';
 import 'package:listenlit/pages/Auth/login_screen.dart';
 import 'package:listenlit/pages/Auth/widgets/tremsandprivacytext.dart';
-import 'package:listenlit/utils/colors.dart';
 
 class SignUpScreen extends StatelessWidget {
   SignUpScreen({super.key});
@@ -35,9 +34,10 @@ class SignUpScreen extends StatelessWidget {
       email: email,
       password: pass,
     );
-
-    if (ok) {
-      Get.to(() => const ChooseInterestScreen());
+    if (ok && authController.user.value?.role != 'agent') {
+      Get.offAll(() => const LandingScreen());
+    } else if (ok && authController.user.value?.role == 'agent') {
+      Get.offAll(() => const AgentScannerScreen());
     }
   }
 
@@ -54,7 +54,6 @@ class SignUpScreen extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(height: 70.h),
-
               Text(
                 'APOS',
                 style: TextStyle(
@@ -64,9 +63,7 @@ class SignUpScreen extends StatelessWidget {
                   fontFamily: 'Inter',
                 ),
               ),
-
               SizedBox(height: 16.h),
-
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 22.w),
                 padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 24.h),
@@ -92,27 +89,34 @@ class SignUpScreen extends StatelessWidget {
                         fontFamily: 'Inter',
                       ),
                     ),
-
                     SizedBox(height: 16.h),
 
-                    _softField(hint: 'Name', controller: nameController),
-
+                    // ✅ champs modernes
+                    _buildModernField(
+                      context: context,
+                      hint: 'Name',
+                      controller: nameController,
+                      prefixIcon: Icons.person_outline_rounded,
+                    ),
                     SizedBox(height: 12.h),
-
-                    _softField(hint: 'Email', controller: emailController),
-
+                    _buildModernField(
+                      context: context,
+                      hint: 'Email',
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon: Icons.mail_outline_rounded,
+                    ),
                     SizedBox(height: 12.h),
-
-                    _softField(
+                    _buildModernField(
+                      context: context,
                       hint: 'Password',
                       controller: passController,
                       obscureText: true,
+                      prefixIcon: Icons.lock_outline_rounded,
                     ),
 
                     SizedBox(height: 10.h),
-
                     const TermsAndPrivacyText(),
-
                     SizedBox(height: 12.h),
 
                     Obx(() {
@@ -151,7 +155,6 @@ class SignUpScreen extends StatelessWidget {
                     }),
 
                     SizedBox(height: 16.h),
-
                     GestureDetector(
                       onTap: () => Get.off(() => LoginScreen()),
                       child: Text(
@@ -174,26 +177,61 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  Widget _softField({
+  Widget _buildModernField({
+    required BuildContext context,
     required String hint,
     required TextEditingController controller,
     bool obscureText = false,
+    IconData? prefixIcon,
+    TextInputType? keyboardType,
   }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return TextField(
       controller: controller,
       obscureText: obscureText,
-      style: const TextStyle(color: Color(0xFF1C3D5A)),
+      keyboardType: keyboardType,
+      style: TextStyle(
+        color: cs.onSurface,
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: cs.primary,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF3C5E78),
-          fontWeight: FontWeight.w600,
+        hintStyle: TextStyle(
+          color: cs.onSurface.withOpacity(0.45),
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w400,
         ),
+        prefixIcon: prefixIcon == null
+            ? null
+            : Icon(prefixIcon, color: cs.primary, size: 20.sp),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.65),
+        fillColor: isDark ? cs.surfaceVariant : cs.surface,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.onSurface.withOpacity(0.08),
+            width: 1,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.onSurface.withOpacity(0.10),
+            width: 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.primary.withOpacity(0.9),
+            width: 1.5,
+          ),
         ),
       ),
     );

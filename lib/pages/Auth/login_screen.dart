@@ -7,6 +7,7 @@ import 'package:listenlit/controllers/auth_controller.dart';
 import 'package:listenlit/general_widgets/primarybutton.dart';
 import 'package:listenlit/pages/Auth/signup_screen.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
+import 'package:listenlit/pages/agent/agent_scanner_screen.dart';
 import 'package:listenlit/pages/Auth/forgetpassword_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -107,8 +108,11 @@ class LoginScreen extends StatelessWidget {
                           password: pass,
                         );
 
-                        if (ok) {
+                        if (ok && authController.user.value?.role != 'agent') {
                           Get.offAll(() => const LandingScreen());
+                        } else if (ok &&
+                            authController.user.value?.role == 'agent') {
+                          Get.offAll(() => const AgentScannerScreen());
                         }
                       },
                       borderRadius: 18.r,
