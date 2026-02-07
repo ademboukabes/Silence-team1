@@ -27,6 +27,13 @@ from app.core.logging import (
     get_logger
 )
 
+# Performance
+from app.core.perf import (
+    perf_span,
+    PerfTracker,
+    now_ms
+)
+
 # Errors
 from app.core.errors import (
     AppError,
@@ -64,6 +71,11 @@ __all__ = [
     "set_trace_id",
     "get_trace_id",
     "get_logger",
+    
+    # Performance
+    "perf_span",
+    "PerfTracker",
+    "now_ms",
     
     # Errors
     "AppError",

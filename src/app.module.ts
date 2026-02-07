@@ -18,6 +18,8 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
 import { AuditLogModule } from './modules/audit/audit.module';
 import { BlockchainModule } from './modules/blockchain/blockchain.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AiModule } from './modules/AI/ai.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 
 @Module({
@@ -41,6 +43,8 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     AuditLogModule,
     BlockchainModule,
     AnalyticsModule,
+    AiModule,
+    ChatModule,
   ],
   controllers: [],
   providers: [

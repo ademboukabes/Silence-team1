@@ -21,6 +21,38 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("AI Service starting up...")
     
+    # Initialize HTTP clients at startup to ensure they're ready
+    try:
+        from app.tools import nest_client
+        # Force client initialization
+        _ = nest_client.get_client()
+        logger.info(f"✅ Initialized NestJS client (backend: {nest_client.NEST_BACKEND_URL})")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize nest_client: {e}")
+    
+    try:
+        from app.tools import booking_service_client
+        _ = booking_service_client.get_client()
+        logger.info("✅ Initialized Booking Service client")
+    except Exception as e:
+        logger.warning(f"Booking Service client not available: {e}")
+    
+    try:
+        from app.tools import carrier_service_client
+        _ = carrier_service_client.get_client()
+        logger.info("✅ Initialized Carrier Service client")
+    except Exception as e:
+        logger.warning(f"Carrier Service client not available: {e}")
+    
+    try:
+        from app.tools import slot_service_client
+        _ = slot_service_client.get_client()
+        logger.info("✅ Initialized Slot Service client")
+    except Exception as e:
+        logger.warning(f"Slot Service client not available: {e}")
+    
+    logger.info("AI Service startup complete")
+    
     yield
     
     # Shutdown - close all HTTP clients gracefully

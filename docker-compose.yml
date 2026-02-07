@@ -49,6 +49,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
 
+  ai:
+    build: src/modules/AI
+    ports:
+      - '8000:8000'
+    env_file:
+      - src/modules/AI/.env
+
 volumes:
   postgres:
   redis_data:

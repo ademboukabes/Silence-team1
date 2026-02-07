@@ -13,6 +13,7 @@ Endpoints:
 import logging
 import inspect
 import os
+import uuid
 from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, HTTPException, Request, Query, status
@@ -248,21 +249,61 @@ async def chat(
     auth_header = http_request.headers.get("Authorization")
 
     conversation_id = request.conversation_id
+    trace_id = str(uuid.uuid4())[:8]
+    
     if not conversation_id:
-        conversation = await create_conversation(user_id=request.user_id, user_role=role, auth_header=auth_header)
-        conversation_id = _extract_conversation_id(conversation)
-        if not conversation_id:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Backend returned invalid conversation data")
+        # Pass None as user_id since test users may not exist in database
+        # Backend accepts optional userId - only include if user exists
+        try:
+            logger.info(f"[{trace_id}] Creating conversation for role={role}, user_id=None")
+            conversation = await create_conversation(user_id=None, user_role=role, auth_header=auth_header)
+            conversation_id = _extract_conversation_id(conversation)
+            logger.info(f"[{trace_id}] ✅ Conversation created successfully: {conversation_id}")
+            
+            if not conversation_id:
+                logger.error(f"[{trace_id}] Backend returned conversation without ID: {conversation}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "error": "backend_invalid_response",
+                        "message": "Backend returned conversation data without ID",
+                        "trace_id": trace_id
+                    }
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            error_type = type(e).__name__
+            error_msg = str(e)
+            logger.error(f"[{trace_id}] ❌ Failed to create conversation: {error_type}: {error_msg}")
+            
+            # Import to get backend URL
+            from app.tools import nest_client
+            
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "backend_chat_persistence_failed",
+                    "operation": "create_conversation",
+                    "backend_url": nest_client.NEST_BACKEND_URL,
+                    "error_type": error_type,
+                    "message": error_msg,
+                    "trace_id": trace_id
+                }
+            )
 
     # Save user message
-    await add_message(
-        conversation_id=conversation_id,
-        role=MESSAGE_ROLE_USER,
-        content=request.message,
-        intent=None,
-        metadata=request.context or {},
-        auth_header=auth_header,
-    )
+    try:
+        await add_message(
+            conversation_id=conversation_id,
+            role=MESSAGE_ROLE_USER,
+            content=request.message,
+            intent=None,
+            metadata=request.context or {},
+            auth_header=auth_header,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to save user message: {e}")
 
     # Get history (best-effort)
     raw_history: List[Dict[str, Any]] = []

@@ -31,16 +31,16 @@ NEST_BACKEND_URL = os.getenv("NEST_BACKEND_URL", "http://localhost:3001")
 
 # Endpoint paths (configurable via env)
 NEST_CHAT_CREATE_CONVERSATION_PATH = os.getenv(
-    "NEST_CHAT_CREATE_CONVERSATION_PATH", "/chat/conversations"
+    "NEST_CHAT_CREATE_CONVERSATION_PATH", "/api/chat/conversations"
 )
 NEST_CHAT_ADD_MESSAGE_PATH = os.getenv(
-    "NEST_CHAT_ADD_MESSAGE_PATH", "/chat/conversations/{conversation_id}/messages"
+    "NEST_CHAT_ADD_MESSAGE_PATH", "/api/chat/conversations/{conversation_id}/messages"
 )
 NEST_CHAT_GET_HISTORY_PATH = os.getenv(
-    "NEST_CHAT_GET_HISTORY_PATH", "/chat/conversations/{conversation_id}"
+    "NEST_CHAT_GET_HISTORY_PATH", "/api/chat/conversations/{conversation_id}"
 )
 NEST_CHAT_DELETE_CONVERSATION_PATH = os.getenv(
-    "NEST_CHAT_DELETE_CONVERSATION_PATH", "/chat/conversations/{conversation_id}"
+    "NEST_CHAT_DELETE_CONVERSATION_PATH", "/api/chat/conversations/{conversation_id}"
 )
 
 # HTTP client timeout (seconds)
@@ -289,7 +289,7 @@ def _normalize_history_response(data: Any) -> Dict[str, Any]:
 
 
 async def create_conversation(
-    user_id: int,
+    user_id: Optional[int],
     user_role: str,
     auth_header: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -297,7 +297,7 @@ async def create_conversation(
     Create a new conversation in the backend.
     
     Args:
-        user_id: User ID
+        user_id: Optional User ID (can be None)
         user_role: User role (ADMIN, OPERATOR, CARRIER)
         auth_header: Optional Authorization header to forward
     
@@ -309,30 +309,69 @@ async def create_conversation(
     """
     url = f"{NEST_BACKEND_URL}{NEST_CHAT_CREATE_CONVERSATION_PATH}"
     headers = _build_headers(auth_header)
-    payload = {
-        "userId": user_id,
-        "userRole": user_role
-    }
     
-    logger.debug(f"Creating conversation for user {user_id} with role {user_role}")
+    # Build payload - only include userId if provided
+    payload = {"userRole": user_role}
+    if user_id is not None:
+        payload["userId"] = user_id
+    
+    # DETAILED DEBUG LOGGING
+    logger.info(f"[CREATE_CONV] Starting request")
+    logger.info(f"[CREATE_CONV] URL: {url}")
+    logger.info(f"[CREATE_CONV] Payload: {payload}")
+    logger.debug(f"[CREATE_CONV] Headers: Content-Type=application/json, Auth={'present' if auth_header else 'none'}")
     
     try:
         client = get_client()
+        logger.debug(f"[CREATE_CONV] Got httpx client")
+        
+        logger.info(f"[CREATE_CONV] Sending POST...")
         response = await client.post(url, json=payload, headers=headers)
+        
+        logger.info(f"[CREATE_CONV] Response status: {response.status_code}")
+        logger.debug(f"[CREATE_CONV] Response body (first 300 chars): {response.text[:300]}")
+        
         response.raise_for_status()
+        
         data = response.json()
+        logger.debug(f"[CREATE_CONV] Parsed JSON: {data}")
+        
         normalized = _normalize_conversation_response(data)
-        logger.info(f"Created conversation: {normalized.get('id')}")
+        logger.info(f"[CREATE_CONV] ✅ Success! ID: {normalized.get('id')}")
         return normalized
     except httpx.HTTPStatusError as e:
+        logger.error(f"[CREATE_CONV] ❌ HTTPStatusError: {e.response.status_code}")
+        logger.error(f"[CREATE_CONV] Response: {e.response.text}")
         _handle_http_error(e)
-    except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as e:
-        _handle_connection_error(e)
+        
+    except httpx.ConnectError as e:
+        logger.error(f"[CREATE_CONV] ❌ ConnectError: Cannot reach {url}")
+        logger.error(f"[CREATE_CONV] Details: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Backend unreachable at {url}: {str(e)}"
+        )
+        
+    except httpx.TimeoutException as e:
+        logger.error(f"[CREATE_CONV] ❌ Timeout after {REQUEST_TIMEOUT}s")
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=f"Backend timeout after {REQUEST_TIMEOUT}s: {str(e)}"
+        )
+        
+    except httpx.NetworkError as e:
+        logger.error(f"[CREATE_CONV] ❌ NetworkError: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Network error: {str(e)}"
+        )
+        
     except Exception as e:
-        logger.exception(f"Unexpected error creating conversation: {e}")
+        logger.error(f"[CREATE_CONV] ❌ Unexpected: {type(e).__name__}: {str(e)}")
+        logger.exception("Full traceback:")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {type(e).__name__}"
+            detail=f"Unexpected error: {type(e).__name__}: {str(e)}"
         )
 
 

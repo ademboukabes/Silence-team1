@@ -7,15 +7,30 @@ Hierarchical orchestrator that:
 3. Enforces RBAC based on user role
 4. Routes to specialized agents via registry
 5. Returns structured responses with tracing
+
+PERFORMANCE: Instrumented with PerfTracker and strict deadline enforcement.
 """
 
 import re
 import uuid
 import logging
 import inspect
+import asyncio
+import os
 from typing import Dict, List, Any, Optional, Callable, Type
 
+from app.core.perf import PerfTracker
+
 logger = logging.getLogger(__name__)
+
+# ============================================================================
+# Performance Configuration
+# ============================================================================
+
+ORCHESTRATOR_DEADLINE = float(os.getenv("ORCHESTRATOR_DEADLINE", "8.0"))
+ORCHESTRATOR_AGENT_TIMEOUT = float(os.getenv("ORCHESTRATOR_AGENT_TIMEOUT", "4.0"))
+
+logger.info(f"Orchestrator configured: deadline={ORCHESTRATOR_DEADLINE}s, agent_timeout={ORCHESTRATOR_AGENT_TIMEOUT}s")
 
 # ============================================================================
 # RBAC Configuration
