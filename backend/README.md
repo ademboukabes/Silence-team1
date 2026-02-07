@@ -5,17 +5,32 @@
 [![Database](https://img.shields.io/badge/Database-PostgreSQL-blue)](https://www.postgresql.org/)
 [![ORM](https://img.shields.io/badge/ORM-Prisma-lightblue)](https://www.prisma.io/)
 [![DevOps](https://img.shields.io/badge/DevOps-Docker-blue)](https://www.docker.com/)
+[![Blockchain](https://img.shields.io/badge/Web3-Ethers.js-orange)](https://ethers.org/)
 
-**APCS-Booking** is a next-generation logistics management platform built during a high-stakes hackathon. It combines enterprise-grade backend architecture with a sophisticated **Multi-Agent AI orchestration** system to automate complex port booking workflows through natural language.
+**APCS-Booking** is a next-generation logistics management platform built during a high-stakes hackathon. It combines enterprise-grade backend architecture with a sophisticated **Multi-Agent AI orchestration** system and an **Immutable Blockchain Notary** to automate complex port booking workflows through natural language.
 
 ---
 
 ## 💎 Core Value Propositions
 
 - **🤖 Autonomous Orchestration**: A multi-agent system that understands intents and negotiates bookings without human intervention.
-- **🔗 Immutable Audit Trail**: Critical booking events are notarized on the **Blockchain** using Ethers.js for absolute transparency.
+- **🔗 Immutable Blockchain Notary**: Integration with Ethereum/EVM chains via **Ethers.js** to notarize every critical booking event, ensuring a tamper-proof audit trail.
 - **🛡️ Enterprise Security**: Built-in Rate Limiting, JWT stateless Auth, and modular validation guards.
 - **📡 Real-time IoT Sync**: WebSocket-driven gate control and instant status updates for drivers and operators.
+
+---
+
+## ⛓️ Blockchain Notary Implementation
+
+The system leverages a dedicated **Blockchain Notary Module** to ensure the integrity of logistics data:
+
+- **Technology**: Ethers.js + EVM-compatible Smart Contracts.
+- **Workflow**: 
+    1. A booking status changes to `CONFIRMED`.
+    2. A background service hashes the booking metadata (Booking ID, Driver, Time).
+    3. The hash is pushed to a smart contract via an automated transaction.
+    4. The transaction receipt is stored in the system's audit logs, providing a permanent link to the on-chain proof.
+- **Validation**: Developers can verify any booking against the blockchain using the `scripts/test_all.js` suite.
 
 ---
 
