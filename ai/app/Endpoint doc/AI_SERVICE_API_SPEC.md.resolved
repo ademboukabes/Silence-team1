@@ -1,0 +1,1397 @@
+# AI Service - Complete API Specification
+
+**Version**: 1.0.0  
+**Base URL**: `http://localhost:8000`  
+**Service**: Smart Port AI Service - Truck Booking Management
+
+---
+
+## Table of Contents
+
+1. [Core / Ops Endpoints](#a-core--ops-endpoints)
+2. [Chat / Assistant Endpoints](#b-chat--assistant-endpoints)
+3. [Slot Intelligence Endpoints](#c-slot-intelligence-endpoints)
+4. [Operator Endpoints](#d-operator-endpoints)
+5. [Analytics Endpoints](#e-analytics-endpoints)
+6. [STT (Speech-to-Text) Endpoints](#f-stt-speech-to-text-endpoints)
+7. [Admin Endpoints](#g-admin-endpoints)
+8. [Standard Response Envelope](#standard-response-envelope)
+9. [Authentication & Authorization](#authentication--authorization)
+10. [Backend Dependencies](#backend-dependencies)
+
+---
+
+## A) Core / Ops Endpoints
+
+### GET /
+
+**Purpose**: Root health check endpoint
+
+**Auth**: None required
+
+**Response**:
+```json
+{
+  "service": "AI Service",
+  "status": "running",
+  "version": "1.0.0"
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/
+```
+
+---
+
+### GET /health
+
+**Purpose**: Detailed health check
+
+**Auth**: None required
+
+**Response**:
+```json
+{
+  "status": "healthy",
+  "service": "ai_service",
+  "components": {
+    "api": "ok",
+    "orchestrator": "ok"
+  }
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/health
+```
+
+---
+
+## B) Chat / Assistant Endpoints
+
+### POST /api/chat
+
+**Purpose**: Main chatbot entry point - processes user messages through orchestrator
+
+**Auth**: Optional (Bearer token)
+
+**Role**: ALL (ADMIN, OPERATOR, CARRIER)
+
+**Headers**:
+- `Authorization`: `Bearer <token>` (optional)
+- `Content-Type`: `application/json`
+
+**Request Schema**:
+```json
+{
+  "message": "string (required)",
+  "user_id": "integer (required)",
+  "user_role": "string (required, one of: ADMIN|OPERATOR|CARRIER)",
+  "conversation_id": "string (optional)",
+  "context": "object (optional)"
+}
+```
+
+**Response Schema**:
+```json
+{
+  "conversation_id": "string",
+  "message": "string",
+  "intent": "string | null",
+  "data": "object | null",
+  "proofs": "object | null"
+}
+```
+
+**Example Request**:
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "message": "Show me available slots for terminal A tomorrow",
+    "user_id": 123,
+    "user_role": "CARRIER"
+  }'
+```
+
+**Example Response**:
+```json
+{
+  "conversation_id": "conv_abc123",
+  "message": "I found 15 available slots for terminal A on 2026-02-07",
+  "intent": "slot_availability",
+  "data": {
+    "terminal": "A",
+    "date": "2026-02-07",
+    "slots": [...]
+  },
+  "proofs": {
+    "trace_id": "req_xyz789",
+    "agent": "SlotAgent",
+    "mode": "real"
+  }
+}
+```
+
+**Backend Dependencies**:
+- `POST /conversations` (NestJS backend)
+- `POST /conversations/{id}/messages` (NestJS backend)
+- `GET /conversations/{id}/messages` (NestJS backend)
+
+**Errors**:
+- `400`: Invalid user_role
+- `500`: Backend communication failure
+- `503`: Orchestrator unavailable
+
+---
+
+### GET /api/chat/history/{conversation_id}
+
+**Purpose**: Retrieve conversation history
+
+**Auth**: Optional (Bearer token)
+
+**Query Parameters**:
+- `limit`: integer (default: 10)
+- `offset`: integer (default: 0)
+
+**Response**:
+```json
+{
+  "messages": [
+    {
+      "role": "USER",
+      "content": "string",
+      "timestamp": "ISO8601",
+      "intent": "string | null"
+    }
+  ]
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/chat/history/conv_abc123?limit=20" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Backend Dependencies**:
+- `GET /conversations/{id}/messages` (NestJS backend)
+
+**Errors**:
+- `503`: Backend unavailable
+
+---
+
+### DELETE /api/chat/history/{conversation_id}
+
+**Purpose**: Delete conversation
+
+**Auth**: Optional (Bearer token)
+
+**Response**:
+```json
+{
+  "success": true,
+  "conversation_id": "string",
+  "message": "Conversation deleted successfully"
+}
+```
+
+**Example**:
+```bash
+curl -X DELETE "http://localhost:8000/api/chat/history/conv_abc123" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Backend Dependencies**:
+- `DELETE /conversations/{id}` (NestJS backend)
+
+**Errors**:
+- `503`: Backend unavailable
+
+---
+
+### POST /api/chat/voice
+
+**Purpose**: Voice-to-chat endpoint (STT + Orchestrator)
+
+**Auth**: None required (public endpoint)
+
+**Content-Type**: `multipart/form-data`
+
+**Form Fields**:
+- [file](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/Dockerfile): UploadFile (optional, audio file)
+- [url](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/stt.py#188-252): string (optional, audio URL)
+- [language_hint](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/stt.py#77-92): string (default: "auto", options: auto|ar-dz|ar|fr|en)
+- [user_role](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/agents/base_agent.py#203-206): string (default: "CARRIER")
+- [user_id](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/agents/base_agent.py#207-210): string (optional)
+
+**Note**: Provide either [file](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/Dockerfile) OR [url](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/stt.py#188-252), not both
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": "object",
+  "proofs": "object",
+  "stt": {
+    "text": "string",
+    "language": "string",
+    "confidence": "float",
+    "duration_seconds": "float"
+  },
+  "input_modality": "voice"
+}
+```
+
+**Example with file**:
+```bash
+curl -X POST http://localhost:8000/api/chat/voice \
+  -F "file=@booking_request.mp3" \
+  -F "user_role=CARRIER" \
+  -F "language_hint=ar-dz"
+```
+
+**Example with URL**:
+```bash
+curl -X POST http://localhost:8000/api/chat/voice \
+  -F "url=https://example.com/audio.mp3" \
+  -F "user_role=CARRIER"
+```
+
+**Backend Dependencies**:
+- STT Service (local Whisper or external)
+- Orchestrator (internal)
+
+**Errors**:
+- `400`: Invalid input (both or neither file/url provided)
+- `503`: STT service unavailable
+
+---
+
+## C) Slot Intelligence Endpoints
+
+### GET /api/slots/availability
+
+**Purpose**: Get available slots for terminal and date
+
+**Auth**: Optional (public access allowed, but limited data without auth)
+
+**Query Parameters**:
+- `terminal`: string (required, e.g., "A", "B", "C")
+- [date](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/tools/time_tool.py#121-182): string (required, YYYY-MM-DD format)
+- [gate](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/analytics/slot_capacity_analysis.py#314-341): string (optional)
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "terminal": "string",
+    "date": "string",
+    "gate": "string | null",
+    "slots": [
+      {
+        "slot_id": "string",
+        "start_time": "string",
+        "end_time": "string",
+        "capacity": "integer",
+        "available": "integer"
+      }
+    ],
+    "total_count": "integer"
+  },
+  "proofs": {
+    "trace_id": "string",
+    "authenticated": "boolean"
+  }
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/slots/availability?terminal=A&date=2026-02-07"
+```
+
+**Backend Dependencies**:
+- `GET /slots/availability` (Slot Service)
+
+**Errors**:
+- `503`: Slot service unavailable
+
+---
+
+### POST /api/slots/recommend
+
+**Purpose**: Get AI-powered slot recommendations
+
+**Auth**: Required (Bearer token)
+
+**Request Schema**:
+```json
+{
+  "terminal": "string (required)",
+  "date": "string (required, YYYY-MM-DD)",
+  "gate": "string (optional)",
+  "carrier_id": "string (optional)",
+  "requested_time": "string (optional, HH:MM or YYYY-MM-DD HH:MM:SS)"
+}
+```
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "recommended": [
+      {
+        "slot_id": "string",
+        "start_time": "string",
+        "end_time": "string",
+        "score": "float",
+        "reasons": ["string"]
+      }
+    ],
+    "alternatives": [...],
+    "metadata": {
+      "carrier_score": "float | null",
+      "time_preference_match": "float"
+    }
+  },
+  "proofs": {
+    "trace_id": "string",
+    "model": "slot_recommendation",
+    "mode": "real"
+  }
+}
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/api/slots/recommend \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "terminal": "A",
+    "date": "2026-02-07",
+    "carrier_id": "CAR123",
+    "requested_time": "14:00"
+  }'
+```
+
+**Backend Dependencies**:
+- `GET /slots/availability` (Slot Service)
+- `GET /carriers/{id}/score` (Carrier Service, optional)
+
+**Errors**:
+- `401`: Authentication required
+- `503`: Backend service unavailable
+
+---
+
+## D) Operator Endpoints
+
+### GET /api/operator/bookings/{booking_ref}/status
+
+**Purpose**: Get booking status by reference
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Headers**:
+- `Authorization`: `Bearer <token>` (required)
+- `x-user-role`: `ADMIN` or `OPERATOR` (required)
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "booking_ref": "string",
+    "status": "string",
+    "terminal": "string",
+    "slot_start": "string",
+    "slot_end": "string",
+    "carrier_id": "string"
+  },
+  "proofs": {
+    "trace_id": "string"
+  }
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/operator/bookings/BK123456/status" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+**Backend Dependencies**:
+- `GET /bookings/{ref}` (Booking Service)
+
+**Errors**:
+- `403`: Requires ADMIN or OPERATOR role
+- `404`: Booking not found
+- `503`: Booking service unavailable
+
+---
+
+### POST /api/operator/bookings/status/batch
+
+**Purpose**: Get status for multiple bookings (batch)
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Request Schema**:
+```json
+{
+  "refs": ["string"] // Max 100 refs
+}
+```
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "bookings": [...],
+    "requested_count": "integer",
+    "retrieved_count": "integer"
+  },
+  "proofs": {
+    "trace_id": "string"
+  }
+}
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/api/operator/bookings/status/batch \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR" \
+  -d '{
+    "refs": ["BK123", "BK456", "BK789"]
+  }'
+```
+
+**Backend Dependencies**:
+- `POST /bookings/batch` (Booking Service)
+
+**Errors**:
+- `400`: Invalid request (empty refs or > 100 refs)
+- `403`: Requires ADMIN or OPERATOR role
+- `503`: Booking service unavailable
+
+---
+
+### GET /api/operator/slots/availability
+
+**Purpose**: Get slot availability (operator version)
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Query Parameters**:
+- `terminal`: string (required)
+- [date](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/tools/time_tool.py#121-182): string (required, YYYY-MM-DD)
+- [gate](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/analytics/slot_capacity_analysis.py#314-341): string (optional)
+
+**Response**: Same as `/api/slots/availability` but with full details
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/operator/slots/availability?terminal=A&date=2026-02-07" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+**Backend Dependencies**:
+- `GET /slots/availability` (Slot Service)
+
+**Errors**:
+- `403`: Requires ADMIN or OPERATOR role
+- `503`: Slot service unavailable
+
+---
+
+### GET /api/operator/ai-overview
+
+**Purpose**: Get AI operator analytics overview with BA-grade insights
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Query Parameters**:
+- `operator_id`: string (required)
+- `terminal`: string (optional)
+- `days`: integer (default: 30, range: 7-90)
+- `bucket`: string (default: "1h")
+- `use_llm`: boolean (default: true)
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "operator_id": "string",
+    "terminal": "string | null",
+    "month_analyzed": "string (YYYY-MM)",
+    "operator_management_score": "integer (0-100)",
+    "planning_quality": "string (GOOD|RISK|CRITICAL)",
+    "patterns": [
+      {
+        "title": "string",
+        "evidence": "string",
+        "severity": "float (0-1)",
+        "time_windows": ["string"]
+      }
+    ],
+    "suggestions": [
+      {
+        "title": "string",
+        "why": "string",
+        "expected_impact": "string",
+        "confidence": "float",
+        "actions": ["string"]
+      }
+    ],
+    "decision_stats": {
+      "total_actions": "integer",
+      "accept_count": "integer",
+      "reject_count": "integer",
+      "accept_rate": "float",
+      "reject_rate": "float"
+    },
+    "overall_utilization": "float",
+    "executive_summary": "string (optional, if use_llm=true)",
+    "key_findings": ["string"] (optional, if use_llm=true)
+  },
+  "proofs": {
+    "trace_id": "string",
+    "data_sources": ["string"],
+    "methods": ["string"],
+    "mode": "real"
+  }
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/operator/ai-overview?operator_id=OP123&terminal=A&days=30" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+**Backend Dependencies**:
+- `GET /analytics/operators/{id}/actions` (Analytics Service)
+- `GET /analytics/plan/slots` (Analytics Service)
+- `GET /analytics/ops/throughput` (Analytics Service)
+
+**Errors**:
+- `403`: Requires ADMIN or OPERATOR role
+- `424`: Backend analytics endpoints unavailable
+- `500`: Analytics computation failed
+
+---
+
+### GET /api/operator/month-forecast
+
+**Purpose**: Forecast monthly throughput and identify high-risk windows
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Query Parameters**:
+- `operator_id`: string (required)
+- [month](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/operator.py#311-445): string (required, YYYY-MM format, regex: `^\d{4}-\d{2}$`)
+- `terminal`: string (optional)
+- `bucket`: string (default: "1h")
+- `capacity_boost_pct`: integer (default: 0, range: 0-50)
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "operator_id": "string",
+    "terminal": "string | null",
+    "forecast_total_trucks": "integer",
+    "forecast_buckets": [
+      {
+        "slot_start": "string",
+        "slot_end": "string",
+        "predicted_trucks": "integer",
+        "saturation_risk": "float (0-1)"
+      }
+    ],
+    "planning_quality": "string (GOOD|RISK|CRITICAL)",
+    "month_alignment_score": "integer (0-100)",
+    "high_risk_windows": ["string"],
+    "simulation_results": "object (optional, if capacity_boost_pct > 0)"
+  },
+  "proofs": {
+    "trace_id": "string",
+    "data_sources": ["string"],
+    "methods": ["seasonal_naive", "ewma_smoothing", "saturation_risk"],
+    "mode": "real"
+  }
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/operator/month-forecast?operator_id=OP123&month=2026-03&capacity_boost_pct=10" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+**Backend Dependencies**:
+- `GET /analytics/ops/throughput` (Analytics Service)
+- `GET /analytics/plan/slots` (Analytics Service)
+
+**Errors**:
+- `400`: Invalid month format
+- `403`: Requires ADMIN or OPERATOR role
+- `424`: Backend analytics endpoints unavailable
+- `500`: Forecast computation failed
+
+---
+
+## E) Analytics Endpoints
+
+### GET /api/analytics/stress-index
+
+**Purpose**: Compute stress/congestion index for terminal
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Headers**:
+- `Authorization`: `Bearer <token>` (required)
+- `x-user-role`: `ADMIN` or `OPERATOR` (required)
+- `x-request-id`: string (optional)
+
+**Query Parameters**:
+- `terminal`: string (required)
+- [date](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/tools/time_tool.py#121-182): string (optional, YYYY-MM-DD, defaults to today)
+- [gate](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/analytics/slot_capacity_analysis.py#314-341): string (optional)
+- `horizon_hours`: integer (default: 6)
+
+**Response Schema**:
+```json
+{
+  "status": "success",
+  "data": {
+    "stress_index": "float (0-100)",
+    "level": "string (low|medium|high|critical)",
+    "drivers": {
+      "capacity_pressure": "float (0-100)",
+      "traffic_pressure": "float (0-100)",
+      "anomaly_pressure": "float (0-100)",
+      "queue_pressure": "float (0-100)"
+    },
+    "recommendations": ["string"],
+    "data_quality": {
+      "mode": "string",
+      "sources": ["string"]
+    }
+  },
+  "request_id": "string"
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/analytics/stress-index?terminal=A&date=2026-02-07" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+**Backend Dependencies**:
+- Traffic forecast data
+- Capacity data
+- Anomaly detection data
+
+**Errors**:
+- `403`: Requires ADMIN or OPERATOR role
+- `500`: Computation failed
+
+---
+
+### GET /api/analytics/alerts
+
+**Purpose**: Generate proactive operational alerts
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Query Parameters**:
+- `terminal`: string (required)
+- [date](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/tools/time_tool.py#121-182): string (optional, defaults to today)
+- `min_severity`: string (default: "medium", options: low|medium|high|critical)
+
+**Response Schema**:
+```json
+{
+  "status": "success",
+  "data": {
+    "terminal": "string",
+    "date": "string",
+    "alerts_count": "integer",
+    "alerts": [
+      {
+        "type": "string (capacity|traffic|anomaly|stress|carrier_risk|no_show_risk)",
+        "severity": "string (low|medium|high|critical)",
+        "title": "string",
+        "description": "string",
+        "recommended_actions": ["string"],
+        "evidence": "object"
+      }
+    ]
+  },
+  "request_id": "string"
+}
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/api/analytics/alerts?terminal=A&min_severity=high" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR"
+```
+
+**Backend Dependencies**:
+- Stress index computation
+- Capacity data
+- Traffic forecast
+- Anomaly detection
+
+**Errors**:
+- `403`: Requires ADMIN or OPERATOR role
+- `500`: Alert generation failed
+
+---
+
+### POST /api/analytics/what-if
+
+**Purpose**: Run what-if scenario simulation
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN or OPERATOR only
+
+**Request Schema**:
+```json
+{
+  "scenario": {
+    "type": "string (shift_demand|gate_closure|add_capacity|carrier_policy)",
+    // Type-specific fields:
+    // For shift_demand:
+    "from_terminal": "string",
+    "to_terminal": "string",
+    "percentage": "integer",
+    // For gate_closure:
+    "gate": "string",
+    "duration_hours": "integer",
+    // For add_capacity:
+    "additional_slots": "integer"
+  },
+  "terminal": "string (required)",
+  "date": "string (optional, YYYY-MM-DD)"
+}
+```
+
+**Response Schema**:
+```json
+{
+  "status": "success",
+  "data": {
+    "scenario_type": "string",
+    "baseline": {
+      "stress_index": "float"
+    },
+    "simulated": {
+      "stress_index": "float"
+    },
+    "deltas": {
+      "stress_index": "float"
+    },
+    "recommendations": ["string"],
+    "confidence": "string (low|medium|high)",
+    "data_quality": {
+      "mode": "string"
+    }
+  },
+  "request_id": "string"
+}
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/api/analytics/what-if \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: OPERATOR" \
+  -d '{
+    "scenario": {
+      "type": "shift_demand",
+      "from_terminal": "A",
+      "to_terminal": "B",
+      "percentage": 20
+    },
+    "terminal": "A",
+    "date": "2026-02-07"
+  }'
+```
+
+**Backend Dependencies**:
+- Stress index computation
+- Capacity data
+- Traffic forecast
+
+**Errors**:
+- `403`: Requires ADMIN or OPERATOR role
+- `500`: Simulation failed
+
+---
+
+### GET /api/analytics/health
+
+**Purpose**: Analytics service health check
+
+**Auth**: None required (public endpoint)
+
+**Response**:
+```json
+{
+  "status": "healthy",
+  "service": "analytics",
+  "features": ["stress_index", "proactive_alerts", "what_if_simulation"]
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/analytics/health
+```
+
+---
+
+## F) STT (Speech-to-Text) Endpoints
+
+### POST /api/stt/transcribe
+
+**Purpose**: Transcribe uploaded audio file
+
+**Auth**: None required (public endpoint)
+
+**Content-Type**: `multipart/form-data`
+
+**Form Fields**:
+- [file](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/Dockerfile): UploadFile (required, audio file)
+- [language_hint](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/stt.py#77-92): string (default: "auto", options: auto|ar-dz|ar|fr|en)
+- [normalize](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/chat.py#144-180): boolean (default: false, apply Darija normalization)
+- [format](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/tools/time_tool.py#295-325): string (default: "json", options: json|text)
+
+**Supported Formats**: mp3, m4a, ogg, wav, webm, opus
+
+**Max Size**: 15MB
+
+**Response Schema** (format=json):
+```json
+{
+  "text": "string",
+  "language": "string",
+  "confidence": "float (0-1)",
+  "duration_seconds": "float",
+  "segments": [
+    {
+      "start": "float",
+      "end": "float",
+      "text": "string"
+    }
+  ]
+}
+```
+
+**Response Schema** (format=text):
+```json
+{
+  "text": "string"
+}
+```
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/api/stt/transcribe \
+  -F "file=@audio.mp3" \
+  -F "language_hint=ar-dz" \
+  -F "normalize=true"
+```
+
+**Backend Dependencies**:
+- STT Service (local Whisper or external)
+
+**Errors**:
+- `400`: Invalid file (no file, too large, unsupported format, invalid language)
+- `503`: STT service unavailable
+- `500`: Processing failed
+
+---
+
+### POST /api/stt/transcribe-url
+
+**Purpose**: Transcribe audio from URL
+
+**Auth**: None required (public endpoint)
+
+**Request Schema**:
+```json
+{
+  "url": "string (required, HTTP(S) URL)",
+  "language_hint": "string (default: auto)",
+  "normalize": "boolean (default: false)"
+}
+```
+
+**Response Schema**: Same as `/api/stt/transcribe`
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/api/stt/transcribe-url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/audio.mp3",
+    "language_hint": "ar-dz",
+    "normalize": false
+  }'
+```
+
+**Backend Dependencies**:
+- STT Service (local Whisper or external)
+
+**Errors**:
+- `400`: Invalid URL, download failed, unsupported format
+- `503`: STT service unavailable
+- `500`: Processing failed
+
+---
+
+### GET /api/stt/health
+
+**Purpose**: Check STT service health
+
+**Auth**: None required (public endpoint)
+
+**Response Schema**:
+```json
+{
+  "enabled": "boolean",
+  "provider": "string (local_whisper|external)",
+  "model_name": "string | null",
+  "mode": "string (real|mock|error)",
+  "ready": "boolean",
+  "error": "string | null"
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/stt/health
+```
+
+---
+
+## G) Admin Endpoints
+
+### GET /api/admin/health/models
+
+**Purpose**: Get health status of all loaded models
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN only
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "loaded_models": ["string"],
+    "available_models": ["string"],
+    "config": {
+      "model_mode_default": "string",
+      "model_artifacts_dir": "string"
+    }
+  },
+  "proofs": {
+    "trace_id": "string"
+  }
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/admin/health/models \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: ADMIN"
+```
+
+**Errors**:
+- `403`: Requires ADMIN role
+- `503`: Model health check failed
+
+---
+
+### GET /api/admin/health/services
+
+**Purpose**: Check health of backend services
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN only
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "overall": "string (healthy|degraded)",
+    "services": {
+      "booking_service": {
+        "url": "string",
+        "status": "string (healthy|degraded|timeout|unreachable|error)",
+        "reachable": "boolean",
+        "status_code": "integer | null",
+        "error": "string | null"
+      },
+      "carrier_service": {...},
+      "slot_service": {...}
+    }
+  },
+  "proofs": {
+    "trace_id": "string"
+  }
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/admin/health/services \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: ADMIN"
+```
+
+**Backend Dependencies**:
+- Booking Service `/health`
+- Carrier Service `/health`
+- Slot Service `/health`
+
+**Errors**:
+- `403`: Requires ADMIN role
+
+---
+
+### GET /api/admin/system/info
+
+**Purpose**: Get system information and configuration
+
+**Auth**: Required (Bearer token)
+
+**Role**: ADMIN only
+
+**Response Schema**:
+```json
+{
+  "message": "string",
+  "data": {
+    "api_version": "string",
+    "orchestrator_version": "string",
+    "config": {
+      "model_mode_default": "string",
+      "model_artifacts_dir": "string",
+      "enable_model_warmup": "string",
+      "environment": "string",
+      "log_level": "string"
+    },
+    "python_version": "string"
+  },
+  "proofs": {
+    "trace_id": "string"
+  }
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/admin/system/info \
+  -H "Authorization: Bearer <token>" \
+  -H "x-user-role: ADMIN"
+```
+
+**Errors**:
+- `403`: Requires ADMIN role
+
+---
+
+## Standard Response Envelope
+
+All endpoints follow this standard response format:
+
+### Success Response:
+```json
+{
+  "message": "string (human-readable success message)",
+  "data": "object | null (response payload)",
+  "proofs": {
+    "trace_id": "string (request trace ID)",
+    "sources": "array (optional, data sources used)",
+    "request_id": "string (optional)",
+    "mode": "string (optional, real|mock)",
+    "agent": "string (optional, agent name)",
+    "model": "string (optional, model name)"
+  }
+}
+```
+
+### Error Response:
+```json
+{
+  "message": "string (human-readable error message)",
+  "data": {
+    "error": "string (error type)",
+    "details": "object (additional error details)"
+  },
+  "proofs": {
+    "trace_id": "string",
+    "error_type": "string (optional)"
+  }
+}
+```
+
+### HTTP Status Codes:
+- `200`: Success
+- `400`: Bad Request (invalid input)
+- `401`: Unauthorized (missing authentication)
+- `403`: Forbidden (insufficient permissions)
+- `404`: Not Found
+- `422`: Unprocessable Entity (validation error)
+- `424`: Failed Dependency (backend service unavailable)
+- `500`: Internal Server Error
+- `503`: Service Unavailable
+
+---
+
+## Authentication & Authorization
+
+### Authentication
+
+**Method**: Bearer Token
+
+**Header**: `Authorization: Bearer <token>`
+
+**Optional Endpoints**: 
+- `/api/chat` (works without auth but limited features)
+- `/api/slots/availability` (public access, limited data)
+- `/api/stt/*` (public endpoints)
+- `/api/chat/voice` (public endpoint)
+
+**Required Endpoints**: All others require authentication
+
+### Authorization (RBAC)
+
+**Roles**:
+- `ADMIN`: Full access to all endpoints
+- `OPERATOR`: Access to operator and analytics endpoints
+- `CARRIER`: Access to chat, slots, and booking endpoints
+- `ANON`: Public endpoints only
+
+**Role Header**: `x-user-role: <ROLE>`
+
+**Role Requirements by Endpoint Category**:
+- **Admin Endpoints** (`/api/admin/*`): ADMIN only
+- **Analytics Endpoints** (`/api/analytics/*`): ADMIN or OPERATOR
+- **Operator Endpoints** (`/api/operator/*`): ADMIN or OPERATOR
+- **Chat Endpoints** (`/api/chat`): ALL roles
+- **Slot Endpoints** (`/api/slots/*`): ALL roles (recommend requires auth)
+- **STT Endpoints** (`/api/stt/*`): Public (no role required)
+
+---
+
+## Backend Dependencies
+
+The AI Service integrates with the following backend microservices:
+
+### 1. NestJS Backend
+**Base URL**: Configured via `NESTJS_BACKEND_URL`
+
+**Endpoints Used**:
+- `POST /conversations` - Create conversation
+- `POST /conversations/{id}/messages` - Add message
+- `GET /conversations/{id}/messages` - Get conversation history
+- `DELETE /conversations/{id}` - Delete conversation
+
+**Used By**: Chat endpoints
+
+---
+
+### 2. Booking Service
+**Base URL**: Configured via `BOOKING_SERVICE_URL`
+
+**Endpoints Used**:
+- `GET /bookings/{ref}` - Get booking status
+- `POST /bookings/batch` - Get batch booking status
+- `POST /bookings` - Create booking (via orchestrator)
+- `PUT /bookings/{ref}/cancel` - Cancel booking (via orchestrator)
+- `PUT /bookings/{ref}/reschedule` - Reschedule booking (via orchestrator)
+
+**Used By**: Operator endpoints, BookingAgent
+
+---
+
+### 3. Carrier Service
+**Base URL**: Configured via `CARRIER_SERVICE_URL`
+
+**Endpoints Used**:
+- `GET /carriers/{id}/score` - Get carrier reliability score
+- `GET /carriers/{id}` - Get carrier details
+
+**Used By**: Slot recommendation, CarrierScoreAgent
+
+---
+
+### 4. Slot Service
+**Base URL**: Configured via `SLOT_SERVICE_URL`
+
+**Endpoints Used**:
+- `GET /slots/availability` - Get available slots
+- `GET /slots/calendar` - Get slot calendar
+
+**Used By**: Slot endpoints, SlotAgent
+
+---
+
+### 5. Analytics Service
+**Base URL**: Configured via `ANALYTICS_SERVICE_URL`
+
+**Endpoints Used**:
+- `GET /analytics/operators/{id}/actions` - Get operator actions
+- `GET /analytics/plan/slots` - Get planned slots
+- `GET /analytics/ops/throughput` - Get operational throughput
+- `GET /analytics/ops/bookings` - Get booking statistics
+
+**Used By**: Operator analytics endpoints, AnalyticsAgent
+
+---
+
+### 6. Blockchain Service
+**Base URL**: Configured via `BLOCKCHAIN_SERVICE_URL`
+
+**Endpoints Used**:
+- `GET /audit/blockchain` - Get blockchain audit trail
+- `GET /audit/blockchain/{booking_ref}` - Get booking audit
+
+**Used By**: BlockchainAuditAgent
+
+---
+
+### 7. STT Service
+**Configuration**: Local Whisper or external STT service
+
+**Used By**: STT endpoints, Voice chat endpoint
+
+---
+
+## Notes for Frontend Developers
+
+### 1. **Conversation Management**
+- Always store [conversation_id](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/chat.py#119-126) from first `/api/chat` response
+- Include [conversation_id](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/api/chat.py#119-126) in subsequent messages for context
+- Use `/api/chat/history/{conversation_id}` to retrieve past messages
+
+### 2. **Error Handling**
+- Check `data.error` field in response for error details
+- Display [message](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/agents/base_agent.py#211-214) field to users (human-readable)
+- Use `proofs.trace_id` for support/debugging
+
+### 3. **RBAC**
+- Always send `x-user-role` header with user's role
+- Handle `403` errors gracefully (show "Access Denied" message)
+- Disable features based on user role in UI
+
+### 4. **Loading States**
+- Show loading indicator for async operations
+- `/api/chat` can take 2-10 seconds (orchestrator + backend calls)
+- `/api/operator/ai-overview` can take 5-15 seconds (analytics computation)
+
+### 5. **Voice Chat**
+- Use `/api/chat/voice` for voice input
+- Display `stt.text` to show what was transcribed
+- Show `stt.confidence` if < 0.8 (warn user about low confidence)
+
+### 6. **Slot Recommendations**
+- Use `/api/slots/recommend` for authenticated users
+- Fall back to `/api/slots/availability` for public users
+- Display [score](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/agents/operator_analytics_agent.py#307-372) and `reasons` for each recommended slot
+
+### 7. **Operator Analytics**
+- Use `/api/operator/ai-overview` for dashboard
+- Display `operator_management_score` as progress bar (0-100)
+- Color-code [planning_quality](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/agents/operator_analytics_agent.py#373-387): GOOD=green, RISK=yellow, CRITICAL=red
+- Show `patterns` and `suggestions` in separate sections
+
+### 8. **Real-time Updates**
+- Poll `/api/operator/bookings/{ref}/status` for booking status updates
+- Use `/api/analytics/alerts` for proactive notifications
+- Refresh analytics data every 5-10 minutes
+
+---
+
+## OpenAPI Schema
+
+The service automatically generates OpenAPI schema at:
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI JSON**: `http://localhost:8000/openapi.json`
+
+All Pydantic schemas are properly defined with no `Ellipsis` (`...`) defaults.
+
+---
+
+## Deployment Checklist
+
+Before deploying to production:
+
+1. ✅ Configure all backend service URLs in environment variables
+2. ✅ Set up authentication/authorization middleware
+3. ✅ Enable CORS for allowed origins (update `allow_origins` in [main.py](file:///c:/Users/yoka/Desktop/Silence-team1/src/modules/AI/app/main.py))
+4. ✅ Configure logging level (`LOG_LEVEL=INFO` for production)
+5. ✅ Set `ENVIRONMENT=production`
+6. ✅ Verify all backend services are reachable (`/api/admin/health/services`)
+7. ✅ Test RBAC enforcement for all protected endpoints
+8. ✅ Load test critical endpoints (`/api/chat`, `/api/operator/ai-overview`)
+9. ✅ Set up monitoring and alerting
+10. ✅ Document API rate limits (if applicable)
+
+---
+
+**End of API Specification**
+
+*Generated: 2026-02-07*  
+*Version: 1.0.0*  
+*Service: AI Service - Smart Port Truck Booking Management*
