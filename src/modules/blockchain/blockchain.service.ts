@@ -26,8 +26,10 @@ export class BlockchainService implements OnModuleInit {
             const privateKey = process.env.BLOCKCHAIN_PRIVATE_KEY;
             const contractAddress = process.env.BLOCKCHAIN_CONTRACT_ADDRESS;
 
-            if (!rpcUrl || !privateKey || !contractAddress) {
-                this.logger.warn('Blockchain configuration missing. Operating in degraded mode.');
+            // Check if we should use simulation mode
+            if (!rpcUrl || rpcUrl.includes('your-rpc-url') || !privateKey || !contractAddress || contractAddress === '0x...') {
+                this.logger.warn('⚠️ Blockchain configuration incomplete. Switch to SIMULATION MODE.');
+                this.logger.warn('In Simulation Mode, hashes are generated but not sent to a real chain.');
                 return;
             }
 
@@ -35,9 +37,10 @@ export class BlockchainService implements OnModuleInit {
             this.wallet = new ethers.Wallet(privateKey, this.provider);
             this.contract = new ethers.Contract(contractAddress, this.ABI, this.wallet);
 
-            this.logger.log('Blockchain service initialized successfully.');
+            this.logger.log('✅ Blockchain service initialized successfully (Live Mode).');
         } catch (error) {
-            this.logger.error(`Failed to initialize blockchain service: ${error.message}`);
+            this.logger.error(`❌ Failed to initialize blockchain service: ${error.message}`);
+            this.logger.warn('Falling back to SIMULATION MODE.');
         }
     }
 
@@ -67,7 +70,23 @@ export class BlockchainService implements OnModuleInit {
      */
     private async sendToBlockchain(bookingId: string, dataHash: string): Promise<void> {
         if (!this.contract) {
-            this.logger.warn(`Blockchain contract not initialized. Fallback: Skipping notarization for ${bookingId}`);
+            this.logger.log(`[SIMULATION] Notarizing booking ${bookingId} on virtual chain...`);
+            this.logger.log(`[SIMULATION] Data Hash: ${dataHash}`);
+
+            // Artificial delay to mimic blockchain latency
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            const mockTxHash = '0x' + crypto.randomBytes(32).toString('hex');
+            this.logger.log(`[SIMULATION] ✅ Success! Virtual TX: ${mockTxHash}`);
+
+            await this.auditService.logAction(
+                0,
+                'BLOCKCHAIN_NOTARIZATION_SIMULATED',
+                'SUCCESS',
+                'BOOKING',
+                bookingId,
+                { transactionHash: mockTxHash, dataHash, note: 'Simulated due to missing config' }
+            );
             return;
         }
 
