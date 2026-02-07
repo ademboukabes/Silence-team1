@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:listenlit/controllers/auth_controller.dart';
-
 import 'package:listenlit/general_widgets/primarybutton.dart';
 import 'package:listenlit/pages/landingScreen/landing_screen.dart';
 
 class LoginPasswordScreen extends StatelessWidget {
   LoginPasswordScreen({super.key, required this.email});
+
   final TextEditingController passController = TextEditingController();
   final String email;
   final AuthController authController = Get.find<AuthController>();
@@ -26,7 +26,6 @@ class LoginPasswordScreen extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(height: 70.h),
-
               Text(
                 'APCS',
                 style: TextStyle(
@@ -36,9 +35,7 @@ class LoginPasswordScreen extends StatelessWidget {
                   fontFamily: 'Inter',
                 ),
               ),
-
               SizedBox(height: 16.h),
-
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 22.w),
                 padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 24.h),
@@ -64,9 +61,7 @@ class LoginPasswordScreen extends StatelessWidget {
                         fontFamily: 'Inter',
                       ),
                     ),
-
                     SizedBox(height: 6.h),
-
                     Text(
                       email,
                       style: TextStyle(
@@ -76,17 +71,18 @@ class LoginPasswordScreen extends StatelessWidget {
                         fontFamily: 'Inter',
                       ),
                     ),
-
                     SizedBox(height: 16.h),
 
-                    _softField(
+                    // ✅ modern field (plus blanc sur blanc, plus “rose”)
+                    _buildModernField(
+                      context: context,
                       hint: 'Password',
                       controller: passController,
                       obscureText: true,
+                      prefixIcon: Icons.lock_outline_rounded,
                     ),
 
                     SizedBox(height: 14.h),
-
                     PrimaryButton(
                       onTap: _handleLogin,
                       borderRadius: 18.r,
@@ -97,7 +93,6 @@ class LoginPasswordScreen extends StatelessWidget {
                       textColor: cs.onPrimary,
                       bgColor: cs.primary,
                     ),
-
                     Obx(() {
                       final err = authController.loginError.value;
                       if (err == null || err.isEmpty) {
@@ -137,26 +132,59 @@ class LoginPasswordScreen extends StatelessWidget {
     }
   }
 
-  Widget _softField({
+  Widget _buildModernField({
+    required BuildContext context,
     required String hint,
     required TextEditingController controller,
     bool obscureText = false,
+    IconData? prefixIcon,
   }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return TextField(
       controller: controller,
       obscureText: obscureText,
-      style: const TextStyle(color: Color(0xFF1C3D5A)),
+      style: TextStyle(
+        color: cs.onSurface,
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: cs.primary,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF3C5E78),
-          fontWeight: FontWeight.w600,
+        hintStyle: TextStyle(
+          color: cs.onSurface.withOpacity(0.45),
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w400,
         ),
+        prefixIcon: prefixIcon == null
+            ? null
+            : Icon(prefixIcon, color: cs.primary, size: 20.sp),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.65),
+        fillColor: isDark ? cs.surfaceVariant : cs.surface,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.onSurface.withOpacity(0.08),
+            width: 1,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.onSurface.withOpacity(0.10),
+            width: 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.primary.withOpacity(0.9),
+            width: 1.5,
+          ),
         ),
       ),
     );

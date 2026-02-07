@@ -23,7 +23,6 @@ class ForgetPasswordScreen extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(height: 70.h),
-
               Text(
                 'APOS',
                 style: TextStyle(
@@ -33,16 +32,12 @@ class ForgetPasswordScreen extends StatelessWidget {
                   fontFamily: 'Inter',
                 ),
               ),
-
               SizedBox(height: 16.h),
-
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 22.w),
                 padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 24.h),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26.r),
-
-                  // au lieu du gradient hardcodé, on utilise une card “theme”
                   color: Theme.of(context).cardTheme.color ?? cs.surface,
                   boxShadow: [
                     BoxShadow(
@@ -65,7 +60,14 @@ class ForgetPasswordScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 16.h),
 
-                    _softField(hint: 'Email', controller: emailController),
+                    // ✅ modern field
+                    _buildModernField(
+                      context: context,
+                      hint: 'Email',
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon: Icons.mail_outline_rounded,
+                    ),
 
                     SizedBox(height: 14.h),
 
@@ -116,24 +118,59 @@ class ForgetPasswordScreen extends StatelessWidget {
     await authController.forgotPassword(email);
   }
 
-  Widget _softField({
+  Widget _buildModernField({
+    required BuildContext context,
     required String hint,
     required TextEditingController controller,
+    TextInputType? keyboardType,
+    IconData? prefixIcon,
   }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Color(0xFF1C3D5A)),
+      keyboardType: keyboardType,
+      style: TextStyle(
+        color: cs.onSurface,
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: cs.primary,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF3C5E78),
-          fontWeight: FontWeight.w600,
+        hintStyle: TextStyle(
+          color: cs.onSurface.withOpacity(0.45),
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w400,
         ),
+        prefixIcon: prefixIcon == null
+            ? null
+            : Icon(prefixIcon, color: cs.primary, size: 20.sp),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.65),
+        fillColor: isDark ? cs.surfaceVariant : cs.surface,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.onSurface.withOpacity(0.08),
+            width: 1,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.onSurface.withOpacity(0.10),
+            width: 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: cs.primary.withOpacity(0.9),
+            width: 1.5,
+          ),
         ),
       ),
     );

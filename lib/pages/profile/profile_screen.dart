@@ -31,19 +31,8 @@ class ProfileScreen extends StatelessWidget {
           Obx(() {
             final user = auth.user.value;
 
-            final name = user?['name']?.toString() ?? '';
-            final id = user?['id']?.toString() ?? '';
-            final company =
-                user?['company']?.toString() ??
-                user?['carrier']?.toString() ??
-                '';
-            final carrierId = user?['carrierId']?.toString() ?? '';
-
-            // si tu as une url image dans ton user, change la clé ici
-            final avatarUrl =
-                user?['avatarUrl']?.toString() ??
-                user?['photoUrl']?.toString() ??
-                '';
+            final name = user?.name.toString() ?? '';
+            final id = user?.id.toString() ?? '';
 
             return _Card(
               child: Column(
@@ -51,7 +40,6 @@ class ProfileScreen extends StatelessWidget {
                   // ✅ rang avatar + infos rapides
                   Row(
                     children: [
-                      _Avatar(avatarUrl: avatarUrl),
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Column(
@@ -68,16 +56,6 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 4.h),
-                            Text(
-                              company.isEmpty ? '—' : company,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: cs.onSurface.withOpacity(0.7),
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -93,14 +71,6 @@ class ProfileScreen extends StatelessWidget {
                             color: cs.primary.withOpacity(0.20),
                           ),
                         ),
-                        child: Text(
-                          carrierId.isEmpty ? '—' : carrierId,
-                          style: TextStyle(
-                            color: cs.primary,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -111,14 +81,6 @@ class ProfileScreen extends StatelessWidget {
 
                   InfoTile(label: 'Nom', value: name.isEmpty ? '-' : name),
                   InfoTile(label: 'ID', value: id.isEmpty ? '-' : id),
-                  InfoTile(
-                    label: 'Compagnie',
-                    value: company.isEmpty ? '-' : company,
-                  ),
-                  InfoTile(
-                    label: 'Carrier ID',
-                    value: carrierId.isEmpty ? '-' : carrierId,
-                  ),
 
                   SizedBox(height: 14.h),
                   Divider(color: cs.onSurface.withOpacity(0.10), height: 1),
@@ -158,45 +120,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
-
-class _Avatar extends StatelessWidget {
-  // plus tard: tu passeras ici avatarUrl (backend)
-  final String? avatarUrl;
-
-  const _Avatar({this.avatarUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    Widget child;
-
-    // ✅ bonne pratique: si un jour avatarUrl != null, on affiche le network
-    if (avatarUrl != null && avatarUrl!.trim().isNotEmpty) {
-      child = Image.network(
-        avatarUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) =>
-            Image.asset('assets/images/avatar.png', fit: BoxFit.cover),
-      );
-    } else {
-      // ✅ aujourd’hui: avatar statique local
-      child = Image.asset('assets/images/avatar.png', fit: BoxFit.cover);
-    }
-
-    return Container(
-      width: 56.w,
-      height: 56.w,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: cs.onSurface.withOpacity(0.10)),
-        color: cs.primary.withOpacity(0.10),
-      ),
-      child: ClipOval(child: child),
-    );
-  }
-}
-
 
 class _Card extends StatelessWidget {
   final Widget child;

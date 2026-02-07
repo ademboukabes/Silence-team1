@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:listenlit/model/user.dart';
 import '../data/providers/auth_provider.dart';
 import '../data/services/token_storage.dart';
 
@@ -8,86 +9,89 @@ class AuthController extends GetxController {
 
   AuthController({required this.authProvider, required this.tokenStorage});
 
-  // Session state
+  // --- État de la session ---
   final isAuthenticated = false.obs;
-  final user = Rxn<Map<String, dynamic>>();
+  // Utilisation de Rxn pour permettre une valeur nulle au démarrage
+  final user = Rxn<User>();
   final error = RxnString();
   final sessionLoading = false.obs;
 
-  // Login state
+  // --- États des opérations ---
   final loginLoading = false.obs;
   final loginError = RxnString();
 
-  // Signup state
   final signupLoading = false.obs;
   final signupError = RxnString();
 
-  // Password reset state
   final resetLoading = false.obs;
   final resetError = RxnString();
 
-  // Call this on app start (splash) to restore session
+  /// Initialise la session au démarrage de l'application
   Future<void> initSession() async {
     sessionLoading.value = true;
     error.value = null;
-    final access = await tokenStorage.getAccessToken();
-    if (access == null || access.isEmpty) {
-      isAuthenticated.value = false;
-      user.value = null;
-      sessionLoading.value = false;
-      return;
-    }
 
     try {
+      final access = await tokenStorage.getAccessToken();
+
+      if (access == null || access.isEmpty) {
+        _clearSessionState();
+        return;
+      }
+
       final me = await authProvider.me();
-      user.value = Map<String, dynamic>.from(me);
+      // Transformation du Map de l'API en objet User
+      user.value = User.fromJson(Map<String, dynamic>.from(me));
       isAuthenticated.value = true;
     } catch (e) {
-      // token invalid/expired
+      // Si le token est invalide ou expiré
       await tokenStorage.clear();
-      isAuthenticated.value = false;
-      user.value = null;
+      _clearSessionState();
       error.value = e.toString();
     } finally {
       sessionLoading.value = false;
     }
   }
 
+  /// Connexion de l'utilisateur
   Future<bool> login({required String email, required String password}) async {
     loginLoading.value = true;
     loginError.value = null;
 
     try {
       final res = await authProvider.login(email: email, password: password);
+
+      // Extraction du token selon les formats possibles
       final access = (res['accessToken'] ?? res['access_token'] ?? res['token'])
           ?.toString();
 
       if (access == null || access.isEmpty) {
-        throw StateError('Login response missing access token');
+        throw StateError('Le serveur n\'a pas renvoyé de jeton d\'accès.');
       }
 
       await tokenStorage.setAccessToken(access);
-      // user can be present in login response, else fetch /me
-      final u = res['user'];
-      if (u is Map) {
-        user.value = Map<String, dynamic>.from(u);
+
+      // Si l'utilisateur est inclus dans la réponse de login, on l'utilise, sinon /me
+      final userData = res['user'];
+      if (userData is Map) {
+        user.value = User.fromJson(Map<String, dynamic>.from(userData));
       } else {
         final me = await authProvider.me();
-        user.value = Map<String, dynamic>.from(me);
+        user.value = User.fromJson(Map<String, dynamic>.from(me));
       }
 
       isAuthenticated.value = true;
       return true;
     } catch (e) {
       loginError.value = e.toString();
-      isAuthenticated.value = false;
-      user.value = null;
+      _clearSessionState();
       return false;
     } finally {
       loginLoading.value = false;
     }
   }
 
+  /// Inscription de l'utilisateur
   Future<bool> signup({
     required String name,
     required String email,
@@ -103,26 +107,25 @@ class AuthController extends GetxController {
         password: password,
       );
 
-      // Some backends auto-login on signup and return tokens
       final access = (res['accessToken'] ?? res['access_token'] ?? res['token'])
           ?.toString();
       final refresh = (res['refreshToken'] ?? res['refresh_token'])?.toString();
 
+      // Si le backend connecte l'utilisateur automatiquement après l'inscription
       if (access != null && access.isNotEmpty) {
         await tokenStorage.setAccessToken(access);
         if (refresh != null && refresh.isNotEmpty) {
           await tokenStorage.setRefreshToken(refresh);
         }
-        final u = res['user'];
-        if (u is Map) {
-          user.value = Map<String, dynamic>.from(u);
+
+        final userData = res['user'];
+        if (userData is Map) {
+          user.value = User.fromJson(Map<String, dynamic>.from(userData));
         } else {
           final me = await authProvider.me();
-          user.value = Map<String, dynamic>.from(me);
+          user.value = User.fromJson(Map<String, dynamic>.from(me));
         }
         isAuthenticated.value = true;
-      } else {
-        isAuthenticated.value = false;
       }
 
       return true;
@@ -134,46 +137,27 @@ class AuthController extends GetxController {
     }
   }
 
+  /// Déconnexion
   Future<void> logout() async {
     error.value = null;
     try {
-      // optional backend logout
       await authProvider.logout();
-    } catch (_) {
-      // ignore
-    }
+    } catch (_) {}
 
     await tokenStorage.clear();
-    isAuthenticated.value = false;
-    user.value = null;
+    _clearSessionState();
   }
 
+  // --- Helpers pour le mot de passe ---
+
   Future<bool> forgotPassword(String email) async {
-    resetLoading.value = true;
-    resetError.value = null;
-    try {
-      await authProvider.forgotPassword(email: email);
-      return true;
-    } catch (e) {
-      resetError.value = e.toString();
-      return false;
-    } finally {
-      resetLoading.value = false;
-    }
+    return _performResetAction(() => authProvider.forgotPassword(email: email));
   }
 
   Future<bool> verifyCode({required String email, required String code}) async {
-    resetLoading.value = true;
-    resetError.value = null;
-    try {
-      await authProvider.verifyCode(email: email, code: code);
-      return true;
-    } catch (e) {
-      resetError.value = e.toString();
-      return false;
-    } finally {
-      resetLoading.value = false;
-    }
+    return _performResetAction(
+      () => authProvider.verifyCode(email: email, code: code),
+    );
   }
 
   Future<bool> resetPassword({
@@ -181,28 +165,31 @@ class AuthController extends GetxController {
     required String newPassword,
     required String code,
   }) async {
-    resetLoading.value = true;
-    resetError.value = null;
-    try {
-      await authProvider.resetPassword(
+    return _performResetAction(
+      () => authProvider.resetPassword(
         email: email,
         newPassword: newPassword,
         code: code,
-      );
-      return true;
-    } catch (e) {
-      resetError.value = e.toString();
-      return false;
-    } finally {
-      resetLoading.value = false;
-    }
+      ),
+    );
   }
 
   Future<bool> saveInterests(List<String> interests) async {
+    return _performResetAction(() => authProvider.saveInterests(interests));
+  }
+
+  // --- Méthodes privées utilitaires ---
+
+  void _clearSessionState() {
+    isAuthenticated.value = false;
+    user.value = null;
+  }
+
+  Future<bool> _performResetAction(Future<dynamic> Function() action) async {
     resetLoading.value = true;
     resetError.value = null;
     try {
-      await authProvider.saveInterests(interests);
+      await action();
       return true;
     } catch (e) {
       resetError.value = e.toString();
