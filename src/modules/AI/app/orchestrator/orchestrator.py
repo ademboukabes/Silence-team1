@@ -118,7 +118,7 @@ ENTITY_PATTERNS = {
     "plate": r"\b([A-Z]{1,3}[-\s]?\d{3,4}[-\s]?[A-Z]{1,3})\b",
     "terminal": r"\b(Terminal|terminal|TERMINAL)\s+([A-Za-z0-9]+)\b",
     "gate": r"\b(Gate|gate|GATE)\s+([A-Za-z0-9]+)\b",
-    "slot_id": r"\b(SLOT|slot|Slot)[-\s]?([A-Z0-9-]{3,})\b",
+    "slot_id": r"\b(?:SLOT|slot|Slot)[-\s]*([A-Z0-9]+-[A-Z0-9]+|[A-Z0-9]+)\b",
     "carrier_id": r"\b(carrier|CARRIER)[-\s]?(\d{1,10})\b",
     "date_today": r"\b(today|now|current)\b",
     "date_tomorrow": r"\b(tomorrow|next day)\b",
@@ -426,12 +426,34 @@ class Orchestrator:
             entities["gate"] = match.group(2).strip().upper()
             entities["gate_full"] = match.group(0).strip()
         
-        # Slot ID (extract identifier with prefix)
+        # Slot ID (extract identifier with prefix, preserving hyphen)
         match = re.search(ENTITY_PATTERNS["slot_id"], message, re.IGNORECASE)
         if match:
-            prefix = match.group(1).upper()
-            slot_num = match.group(2)
-            entities["slot_id"] = f"{prefix}{slot_num}"
+            # captured_id is the ID portion (group 1)
+            captured_id = match.group(1).upper()
+            
+            # Identify the prefix used in the actual message
+            prefix_text = message[match.start(0):match.start(1)]
+            
+            if captured_id.startswith("SLOT"):
+                # Case: "slot SLOT-456" -> captured "SLOT-456"
+                entities["slot_id"] = captured_id
+            else:
+                # Case: "SLOT-123", "SLOT789", "slot 123"
+                # Check formatting based on prefix
+                if "-" in prefix_text:
+                    # Explicit hyphen in prefix -> "SLOT-{captured_id}"
+                    entities["slot_id"] = f"SLOT-{captured_id}"
+                elif prefix_text.strip().upper() == "SLOT" and len(prefix_text.strip()) == len(prefix_text):
+                    # "SLOT" exact match (no trailing space/dash) -> "SLOT{captured_id}"
+                    entities["slot_id"] = f"SLOT{captured_id}"
+                else:
+                    # Space or other separator -> Normalize to "SLOT-{captured_id}"
+                    entities["slot_id"] = f"SLOT-{captured_id}"
+
+
+
+
         
         # Carrier ID (extract numeric ID)
         match = re.search(ENTITY_PATTERNS["carrier_id"], message, re.IGNORECASE)

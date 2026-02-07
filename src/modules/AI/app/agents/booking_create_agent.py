@@ -295,7 +295,6 @@ class BookingCreateAgent(BaseAgent):
         """
         from app.tools import slot_service_client, booking_write_client
         from app.algorithms.slot_recommender import recommend_slots
-        from app.models.loader import get_model
         
         logger.info(f"[{trace_id[:8]}] Smart booking: fetching availability...")
         
@@ -326,20 +325,12 @@ class BookingCreateAgent(BaseAgent):
         
         logger.info(f"[{trace_id[:8]}] Found {len(slots)} available slots")
         
-        # Step 2: Get carrier score (if carrier_id provided)
+        # Step 2: Carrier score (models removed - set to None, algorithm will handle)
         carrier_score = None
         if params.get("carrier_id"):
-            try:
-                carrier_model = get_model("carrier_scoring")
-                carrier_result = await carrier_model.predict(
-                    input={"carrier_id": params["carrier_id"]},
-                    context={"auth_header": auth_header, "trace_id": trace_id}
-                )
-                if carrier_result.get("ok"):
-                    carrier_score = carrier_result["result"].get("score")
-                    logger.info(f"[{trace_id[:8]}] Carrier score: {carrier_score}")
-            except Exception as e:
-                logger.warning(f"[{trace_id[:8]}] Could not get carrier score: {type(e).__name__}")
+            # TODO: Future integration point for carrier scoring
+            logger.debug(f"[{trace_id[:8]}] Carrier scoring not available (models removed)")
+
         
         # Step 3: Run slot recommender
         requested = {

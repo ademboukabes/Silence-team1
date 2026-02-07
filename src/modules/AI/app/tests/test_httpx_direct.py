@@ -3,14 +3,21 @@ Test direct httpx connection to backend to diagnose ConnectError
 """
 import asyncio
 import httpx
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+NEST_BACKEND_URL = os.getenv("NEST_BACKEND_URL", "http://localhost:3000")
 
 async def test_connection():
     print("Testing direct httpx connection to backend...")
-    print(f"URL: http://localhost:3000/api/chat/debug/prisma")
+    print(f"URL: {NEST_BACKEND_URL}/api/chat/debug/prisma")
     
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get("http://localhost:3000/api/chat/debug/prisma")
+            response = await client.get(f"{NEST_BACKEND_URL}/api/chat/debug/prisma")
             print(f"✅ SUCCESS! Status: {response.status_code}")
             print(f"Response: {response.json()}")
     except httpx.ConnectError as e:
